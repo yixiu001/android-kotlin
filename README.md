@@ -32,7 +32,7 @@ Windows 构建命令（按本机实际路径设置 JAVA_HOME）：
 | WECHAT_ENABLED | 客户端微信开关，需平台和服务端配置匹配 |
 | VERSION_CODE / VERSION_NAME | 安装升级版本号与显示版本，版本字符串最多 32 字节 |
 
-第一次复制请完成 [新产品配置清单](docs/new-product-checklist.md)。用户已完成供应商申请，但服务端尚未配置；没有发送真实短信或完成微信真机授权。参见 [供应商接入](docs/providers.md)。
+第一次复制请完成 [新产品配置清单](docs/new-product-checklist.md)。测试服务端已通过 Jenkins #19 加载短信和微信配置，客户端已同步 AppID 与用户登记的包名 cn.fuyaoshouhu.app。微信挑战接口已通过验证，真实短信发送及微信真机授权仍待验收。参见 [供应商接入](docs/providers.md)。
 
 ## 账号行为
 
