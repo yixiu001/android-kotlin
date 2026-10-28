@@ -10,6 +10,8 @@
 
 ## 快速开始
 
+个人中心采用资料头部与分组列表；登录/绑定、退出、注销位于“我的 → 账号与安全”，开发工具位于“我的 → 通用设置”。完整页面与公开链接配置见[个人中心说明](docs/profile-center.md)。
+
 1. Android Studio 打开本目录并 Gradle Sync。
 2. SDK Manager 安装 Android API 37（本机为 37.0）和 Build Tools 36.0.0。Gradle JDK 使用 Android Studio 自带 JBR，本机 Java 25 已验证构建。
 3. 检查根目录 [product.properties](product.properties)，默认访问 https://hyperf.tongyiwl.bond。
@@ -36,8 +38,10 @@ Windows 构建命令（按本机实际路径设置 JAVA_HOME）：
 | WECHAT_ENABLED | 客户端微信开关，需平台和服务端配置匹配 |
 | TEST_TOOLS_ENABLED | debug 联调工具开关，默认 false；release 强制 false |
 | VERSION_CODE / VERSION_NAME | 安装升级版本号与显示版本，版本字符串最多 32 字节 |
+| FEEDBACK_URL | 可选公开 HTTPS 反馈地址；空值显示暂未开放 |
+| PRIVACY_POLICY_URL / TERMS_URL | 产品隐私政策与用户协议的公开 HTTPS 地址；当前未配置，正式发布前补齐 |
 
-第一次复制请完成 [新产品配置清单](docs/new-product-checklist.md)。当前客户端使用包名 cn.fuyaoshouhu.app、测试后端及公开微信 AppID；这是现有联调配置，复制时必须改为新产品自己的配置。当前测试后端为 `f105663` / Jenkins #22 / SQL004，Android 功能提交为 `daa37e0`，均已推送 main；新版 APK 已具备配套后端条件，真实微信流程仍待真机验收。参见 [供应商接入](docs/providers.md)。
+第一次复制请完成 [新产品配置清单](docs/new-product-checklist.md)。当前客户端使用包名 cn.fuyaoshouhu.app、测试后端及公开微信 AppID；这是现有联调配置，复制时必须改为新产品自己的配置。当前测试后端为 `f105663` / Jenkins #22 / SQL004，上一 Android 功能提交为 `2241ab3`，已推送 main；个人中心调整与测试配置修复纳入本次提交，当前设备状态见[本轮验收](docs/verification-2026-10-29-profile-layout.md)。参见 [供应商接入](docs/providers.md)。
 
 ## 账号行为
 
@@ -78,7 +82,7 @@ HTTP 不跟随重定向，不跳过证书验证，不自动重试写请求。deb
     .\gradlew.bat :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleRelease
     .\gradlew.bat :app:connectedDebugAndroidTest
 
-第二条需可连接的真机/模拟器。默认单元测试不访问线上。受控真实测试明确启用：
+第二条完整仪器测试仅用于可丢弃数据的测试设备/模拟器。保留日常真机账号时，只运行隔离界面测试：` .\gradlew.bat :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=cn.yixiu.starter.StarterUiTest`。仓库已设置 `android.injected.androidTest.leaveApksInstalledAfterRun=true` 防止测试结束自动卸载 App；不要移除此项。默认单元测试不访问线上。受控真实测试明确启用：
 
     $env:HYPERF_LIVE_TEST = 'true'
     .\gradlew.bat :app:testDebugUnitTest --tests '*LiveApiSmokeTest' --rerun-tasks

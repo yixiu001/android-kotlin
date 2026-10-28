@@ -5,7 +5,7 @@
 | 方法和路径 | AccountEngine | 用户入口 |
 | --- | --- | --- |
 | POST /auth/guest | start，退出后内部创建 | 首次自动游客 |
-| GET /me | me | 我的、更新账号信息 |
+| GET /me | me | 我的 → 账号与安全 / 通用设置 → 更新账号信息 |
 | POST /auth/sms/challenges | requestSms | 获取验证码 |
 | POST /auth/login/phone | submitPhone，游客 | 验证并登录 |
 | POST /me/identities/phone | submitPhone，正式账号 | 确认绑定 |
@@ -13,12 +13,12 @@
 | POST /auth/login/wechat | submitWechat，游客 | SDK 回调 |
 | POST /me/identities/wechat | submitWechat，正式账号 | SDK 回调 |
 | POST /auth/refresh | refresh，过期内部触发 | 自动刷新/debug 手动刷新 |
-| POST /auth/logout | logout | 确认退出当前账号 |
-| POST /me/profile | updateProfile | 我的 → 编辑昵称和头像 |
+| POST /auth/logout | logout | 我的 → 账号与安全 → 退出当前账号 → 确认 |
+| POST /me/profile | updateProfile | 我的 → 顶部资料区；账号与安全 → 编辑昵称和头像 |
 | POST /me/profile/wechat | confirmWechatProfile | 微信登录/绑定后的单次资料选择，无独立重新授权入口 |
-| POST /me/delete/phone | requestSms(deletion=true) + submitPhone | 注销说明 → 手机号验证 → 验证并立即注销 |
-| POST /me/delete/wechat | requestWechat(deletion=true) + submitWechat | 注销说明 → 验证微信并立即注销 |
-| GET / | health | debug 健康检查 |
+| POST /me/delete/phone | requestSms(deletion=true) + submitPhone | 账号与安全 → 注销账号 → 手机号验证 → 验证并立即注销 |
+| POST /me/delete/wechat | requestWechat(deletion=true) + submitWechat | 账号与安全 → 注销账号 → 验证微信并立即注销 |
+| GET / | health | 我的 → 通用设置 → 开发工具 → 健康检查（仅 debug） |
 
 POST 发送前保存原 origin/path/body/access/key；key 是 SecureRandom 32 字节无 padding base64url（43 字符）。guest、refresh 不带 Authorization；退出用 refresh_token body，避免混传不同版本凭证。
 
@@ -33,7 +33,7 @@ POST 发送前保存原 origin/path/body/access/key；key 是 SecureRandom 32 �
 
 微信确认严格 JSON `{preview_id,use_nickname,use_avatar,overwrite}`，Bearer + 原子保存的 Idempotency-Key，至少选择一项。当前正常流程 overwrite=false；旧版本 overwrite=true 与手动意图恢复仅为升级兼容保留，新 UI 无发起入口。候选只在加密 Vault 中保存，绑定 origin/user/session/generation，TTL 600 秒；跳过落盘后 /me 或重启不重新引入旧候选，刷新同一会话保留尚未完成的选择，切换/退出清除。确认网络未知、429 或 5xx 保留原请求和候选；成功及 WECHAT_PROFILE_EXPIRED/INVALID/CHANGED 清除候选。过期结束本次选择且不影响登录，不引导重新授权；确认不再次交换 OAuth code。日志隐藏 preview_id、候选、昵称和头像 URL。
 
-本流程尚未部署/推送；SQL004 与配套后端发布必须先于新版 APK 联调。原有一键调试重置及完整本地清理保持不变。
+配套后端 SQL004 与 Jenkins #22 已发布。当前个人中心调整仅改变客户端页面导航，不需要新增 SQL 或重新部署后端；原有一键调试重置及完整本地清理保持不变。
 
 
 ACCESS_TOKEN_EXPIRED 明确在原操作应用前拒绝时，刷新 Pending 携带加密非 wire continuation（原 path/body/manualProfile 与 origin/user/session/generation）。恢复先重放原刷新，成功后原子保存新 token + 已授权操作的新 Pending（新 key、原 body、新 access，禁止再次自动刷新）；若续接网络未知则恢复该新 Pending，不重新刷新或获取/交换 OAuth。恢复后的登录 /me 和注销新游客继续按原操作执行；跨账号/会话/环境/代数停止续接。此元数据不进入 API JSON 或日志。

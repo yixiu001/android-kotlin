@@ -8,6 +8,7 @@
 3. 修改 settings.gradle.kts 的 rootProject.name，调整工程展示名称。
 4. 替换 app/src/main/res/drawable/ic_launcher.xml 图标、ui/StarterScreen.kt 品牌色及首页业务区域；正式产品建议配 adaptive icon。
 5. 配置本机 SDK/JDK 后重新 Sync。
+6. 按[个人中心说明](profile-center.md)填写 `FEEDBACK_URL`、`PRIVACY_POLICY_URL`、`TERMS_URL` 的产品公开 HTTPS 地址；模板空值仅显示未配置提示，正式发布前补齐隐私与协议。
 
 namespace 可以保持 cn.yixiu.starter，安装身份由 APPLICATION_ID 区分，无需全局替换 Kotlin 包名。微信回调的 Manifest 别名随 applicationId 自动变化。
 
@@ -19,7 +20,7 @@ API_BASE_URL 只填 HTTPS origin，例如 `https://fysh-api.tongyiwl.bond`，不
 - 新产品不能继续用模板测试后端，否则会共用账号数据。只改 Android 包名不会隔离后端。
 - 微信移动应用需登记新包名和实际 APK 的 MD5，AppID 与后端一致。
 - 短信模板/签名/RAM 密钥在服务器配置，Android 只调用 Hyperf。
-- 不支持解绑或换绑；已提供资料编辑和手机号/微信验证注销。新后端执行 sql/001→002→003→004，已有 001+002+003 的库仅升级 004，再发布后端和新版 App。当前已登录账号重置只属于测试工具，需服务端开关及测试数据库白名单；普通会话 prepare 得到短期 grant，确认成功自动清本地，无日常 CLI/授权码输入。prepare 已发布基线为 Jenkins #21；本次 SQL004/微信资料确认后端尚未发布，后端必须先于新版 APK。
+- 不支持解绑或换绑；已提供资料编辑和手机号/微信验证注销。新后端执行 sql/001→002→003→004，已有 001+002+003 的库仅升级 004，再发布后端和新版 App。当前已登录账号重置只属于测试工具，需服务端开关及测试数据库白名单；普通会话 prepare 得到短期 grant，确认成功自动清本地，无日常 CLI/授权码输入。prepare 已发布基线为 Jenkins #21；当前 SQL004/微信资料确认后端已通过 Jenkins #22 发布。新产品的配套后端仍应先于新版 APK 发布。
 - 头像从内置项选择，或微信登录/绑定后一次性选择补空字段；编辑资料不提供微信重新授权入口。完成、跳过或过期结束本次选择；不上传图片，不需要 OSS。
 
 ## 签名与升级
@@ -28,6 +29,7 @@ API_BASE_URL 只填 HTTPS origin，例如 `https://fysh-api.tongyiwl.bond`，不
 - 运行 gradlew.bat :app:signingReport 查看 debug 公开指纹；不分享密钥文件和密码。
 - debug 未加 applicationIdSuffix。和 release 同包名不同签名时不能直接覆盖安装，卸载会丢失未绑定游客。
 - Vault schema=1 保持兼容；新增候选及 auth intent 为可选成员；旧 Vault 无候选、旧手动意图默认 false，不需清应用数据。解密失败不能自动清空账号。
+- 保留 `gradle.properties` 的 `android.injected.androidTest.leaveApksInstalledAfterRun=true`，避免设备测试收尾自动卸载 App。全量存储/清理仪器测试只能在可丢弃数据的设备运行；日常手机仅运行隔离 `StarterUiTest`。
 
 ## 业务扩展
 

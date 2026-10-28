@@ -1,4 +1,5 @@
 import java.util.Properties
+import java.net.URI
 
 plugins {
     id("com.android.application")
@@ -7,6 +8,14 @@ plugins {
 val product = Properties().apply { rootProject.file("product.properties").reader(Charsets.UTF_8).use { load(it) } }
 fun value(name: String) = product.getProperty(name) ?: error("Missing product property: " + name)
 fun quoted(text: String) = "\"" + text.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+val publicLinks = listOf("FEEDBACK_URL", "PRIVACY_POLICY_URL", "TERMS_URL").associateWith { key ->
+    product.getProperty(key, "").trim().also { url ->
+        require(url.isEmpty() || runCatching {
+            val uri = URI(url)
+            uri.scheme == "https" && !uri.host.isNullOrBlank() && uri.userInfo == null
+        }.getOrDefault(false)) { "$key must be empty or a public HTTPS URL" }
+    }
+}
 require(value("APPLICATION_ID").matches(Regex("[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+")))
 require(value("API_BASE_URL").startsWith("https://"))
 
@@ -24,6 +33,7 @@ android {
         buildConfigField("String", "WECHAT_APP_ID", quoted(value("WECHAT_APP_ID")))
         buildConfigField("boolean", "SMS_ENABLED", value("SMS_ENABLED"))
         buildConfigField("boolean", "WECHAT_ENABLED", value("WECHAT_ENABLED"))
+        publicLinks.forEach { (key, url) -> buildConfigField("String", key, quoted(url)) }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildFeatures { compose = true; buildConfig = true; resValues = true }
@@ -52,6 +62,7 @@ android {
 dependencies {
     implementation(platform("androidx.compose:compose-bom:2025.08.00"))
     implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
     debugImplementation("androidx.compose.ui:ui-tooling")

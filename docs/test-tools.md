@@ -1,6 +1,6 @@
 # 联调工具与首次安装状态
 
-入口：debug 包“我的 → 开发工具”。本项目 product.properties 已启用 TEST_TOOLS_ENABLED=true；配置缺项时回退 false，新产品应默认关闭。release 强制 false，工具实现仅 src/debug；共享 AccountEngine 桥接同时校验 DEBUG 和开关。
+入口：debug 包“我的 → 通用设置 → 开发工具”。本项目 product.properties 已启用 TEST_TOOLS_ENABLED=true；配置缺项时回退 false，新产品应默认关闭。release 强制 false，工具实现仅 src/debug；共享 AccountEngine 桥接同时校验 DEBUG 和开关。
 
 ## 当前账号一键重置
 
