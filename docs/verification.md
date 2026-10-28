@@ -52,3 +52,7 @@
     .\gradlew.bat :app:connectedDebugAndroidTest
 
 默认 LiveApiSmokeTest 跳过，需要显式 HYPERF_LIVE_TEST=true 才访问测试服务器。其余单元测试均为受控传输替身，不冒充真实供应商验收。
+
+## 2026-10-29 当前账号一键重置修订
+
+当前 debug 配置开启（缺项 false），release 强制 false。新流程、恢复边界、设备验收见 [test-tools](test-tools.md)，自动验证及 APK SHA-256 见 [本轮验收](verification-2026-10-29-test-tools.md)。后端 6052fe8 已通过 Jenkins #21 部署，SQL003 和测试开关就绪，本轮未调用真实重置或清除设备。此前手动 grant 验收记录为历史快照。

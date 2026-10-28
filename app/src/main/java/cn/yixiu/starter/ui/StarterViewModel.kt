@@ -21,6 +21,10 @@ class StarterViewModel(application: Application) : AndroidViewModel(application)
         if (engine != null) run("已连接") { engine.start() }
         viewModelScope.launch { app.notice.collect { if (it.isNotEmpty()) { message.value = it; app.notice.value = "" } } }
     }
+    fun launchTestTool(block: suspend CoroutineScope.() -> Unit): Job {
+        check(BuildConfig.DEBUG && BuildConfig.TEST_TOOLS_ENABLED)
+        return viewModelScope.launch(block = block)
+    }
     fun dispatch(action: UiAction) {
         val engine = engine ?: return
         when (action.name) {

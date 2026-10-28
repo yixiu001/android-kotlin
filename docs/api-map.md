@@ -1,4 +1,6 @@
-# 接口映射
+联调工具使用独立 HTTPS POST `/test-tools/v1/account-reset/prepare`（普通 access Bearer，JSON `{}`，顶层预览+grant）、`/execute`（返回的 15 分钟 grant，原 user_id/confirmation）。均经 AccountEngine 调试桥接串行化并校验原账号/origin/generation；不进入普通 API 日志。正常 token 不能执行重置，客户端不接受指定任意目标。成功自动调用 Android 本地完整清理。见[联调工具](test-tools.md)。
+
+联调工具另有两个 HTTPS POST 入口 `/test-tools/v1/account-reset/preview`、`/test-tools/v1/account-reset/execute`，由 debug 专用客户端调用，使用服务器签发的单账号授权，不经过 AccountEngine 或普通请求日志。完整本地清理调用 Android 系统 API，不请求后端。见[联调工具](test-tools.md)。
 
 前缀 /api/v1，健康检查为根 /。权威协议是[后端账号 API](https://github.com/yixiu001/hyperf-swow/blob/main/docs/api/android-account.md)。`product.properties` 的 `API_BASE_URL` 只填 HTTPS origin（如 `https://hyperf.tongyiwl.bond`），前缀由 `ApiClient` 添加；配置里带 `/api/v1` 会被 `Protocol.origin` 拒绝。当前验收边界见[当前状态](current-state.md)。
 

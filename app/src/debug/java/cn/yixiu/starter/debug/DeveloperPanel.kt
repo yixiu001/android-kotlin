@@ -9,6 +9,7 @@ import cn.yixiu.starter.core.Protocol
 import cn.yixiu.starter.ui.*
 
 @Composable fun DeveloperPanel(vm: StarterViewModel) {
+    if (!cn.yixiu.starter.BuildConfig.TEST_TOOLS_ENABLED) return
     var expanded by remember { mutableStateOf(false) }
     var confirm by remember { mutableStateOf(false) }
     val account by vm.account.collectAsStateWithLifecycle()
@@ -16,8 +17,9 @@ import cn.yixiu.starter.ui.*
     val logs by vm.logs.collectAsStateWithLifecycle()
     var origin by remember(account.origin) { mutableStateOf(account.origin) }
     InfoCard {
-        TextButton(onClick = { expanded = !expanded }) { Text(if (expanded) "收起开发工具" else "开发工具 · 仅调试版本") }
+        TextButton(onClick = { expanded = ResetPolicy.panelAfterToggle(expanded, busy) }) { Text(if (expanded) "收起开发工具" else "开发工具 · 仅调试版本") }
         if (expanded) {
+            ResetTools(vm, account.origin, account.userId)
             Text("当前环境：" + account.origin, style = MaterialTheme.typography.bodySmall)
             OutlinedTextField(origin, { origin = it }, label = { Text("HTTPS 环境地址") }, modifier = Modifier.fillMaxWidth())
             OutlinedButton(onClick = { confirm = true }, enabled = !busy) { Text("切换环境") }
@@ -25,6 +27,7 @@ import cn.yixiu.starter.ui.*
                 TextButton(onClick = { vm.dispatch(UiAction("health")) }, enabled = !busy) { Text("健康检查") }
                 TextButton(onClick = { vm.dispatch(UiAction("refresh")) }, enabled = !busy && account.hasSession && account.pendingPath == null) { Text("刷新会话") }
             }
+            TextButton(onClick = { vm.dispatch(UiAction("me")) }, enabled = !busy && account.hasSession) { Text("刷新资料") }
             Text("接口覆盖", style = MaterialTheme.typography.titleMedium)
             Protocol.paths.forEach { path ->
                 val latest = logs.firstOrNull { it.path == path }

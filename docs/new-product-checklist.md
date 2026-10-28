@@ -4,6 +4,7 @@
 
 1. 复制源码到独立目录，不复制 .git、.gradle、.idea、build、local.properties、签名文件或日志。创建自己的 Git 仓库。
 2. 修改 product.properties 中名称、APPLICATION_ID、API_BASE_URL、微信 AppID/开关、版本号、短信入口开关。
+   联调需要时仅在 debug 开启 `TEST_TOOLS_ENABLED`；本项目已开 true，缺项回退 false；新产品默认关闭，release 强制 false，不把重置授权码加入配置文件。
 3. 修改 settings.gradle.kts 的 rootProject.name，调整工程展示名称。
 4. 替换 app/src/main/res/drawable/ic_launcher.xml 图标、ui/StarterScreen.kt 品牌色及首页业务区域；正式产品建议配 adaptive icon。
 5. 配置本机 SDK/JDK 后重新 Sync。
@@ -18,7 +19,7 @@ API_BASE_URL 只填 HTTPS origin，例如 `https://fysh-api.tongyiwl.bond`，不
 - 新产品不能继续用模板测试后端，否则会共用账号数据。只改 Android 包名不会隔离后端。
 - 微信移动应用需登记新包名和实际 APK 的 MD5，AppID 与后端一致。
 - 短信模板/签名/RAM 密钥在服务器配置，Android 只调用 Hyperf。
-- 不支持解绑或换绑；已提供资料编辑和手机号/微信验证注销。新后端执行 sql/001→002，已有库仅升级 002，再发布后端和新版 App。
+- 不支持解绑或换绑；已提供资料编辑和手机号/微信验证注销。新后端执行 sql/001→002→003，已有 001+002 的库仅升级 003，再发布后端和新版 App。当前已登录账号重置只属于测试工具，需服务端开关及测试数据库白名单；普通会话 prepare 得到短期 grant，确认成功自动清本地，无日常 CLI/授权码输入。prepare 后端部署状态待最终记录确认。
 - 头像从内置项选择，或首次绑定微信时选择使用微信头像链接；不上传图片，不需要 OSS。
 
 ## 签名与升级

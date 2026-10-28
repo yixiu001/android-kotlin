@@ -54,6 +54,18 @@ class AccountEngine(private val store: StateStore, private val api: ApiTransport
     }.toString()
     private fun purpose(provider: String) = if (view.value.accountType == "member") "bind_" + provider else "login"
     private fun session() = vault.session ?: throw ApiFailure(ApiReply(401, "SESSION_INVALID"))
+    /** Debug bridge; lock spans identity validation, network operation and local clear. */
+    suspend fun <T> withTestAccount(origin: String, user: String, generation: Long? = null,
+                                   prepare: Boolean = false,
+                                   block: suspend (String, Long) -> T): T = exclusive {
+        check(cn.yixiu.starter.BuildConfig.DEBUG && cn.yixiu.starter.BuildConfig.TEST_TOOLS_ENABLED)
+        ready()
+        check(origin == vault.origin && user.isNotBlank() && user == view.value.userId &&
+            (generation == null || generation == vault.generation)) { "Account or environment changed" }
+        if (prepare) meLocked()
+        check(user == view.value.userId)
+        block(session().access, vault.generation)
+    }
     suspend fun start() = exclusive {
         ready()
         if (vault.session == null) guestLocked() else meLocked()

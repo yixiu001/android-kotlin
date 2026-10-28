@@ -6,6 +6,8 @@
 
 内置中文首页、个人中心、自动游客、手机验证码登录/绑定、微信授权登录/绑定、会话刷新、当前设备退出、昵称/默认头像编辑和验证注销。微信资料仅经用户选择补空字段，头像使用微信链接，无上传或 OSS。新产品在此基础上扩展业务页面。开发工具只存在于 debug 版本。
 
+[联调工具](docs/test-tools.md)支持当前已登录测试账号一键 prepare/确认/重置，服务端确认成功后自动清除全部本地数据并结束应用；另有独立本地清除按钮。本项目 debug 已开启，配置缺项回退 false，release 强制 false 且不包含实现。
+
 ## 快速开始
 
 1. Android Studio 打开本目录并 Gradle Sync。
@@ -32,9 +34,10 @@ Windows 构建命令（按本机实际路径设置 JAVA_HOME）：
 | WECHAT_APP_ID | 微信移动应用 AppID，不是 AppSecret |
 | SMS_ENABLED | 客户端短信入口开关，不代表服务端已启用 |
 | WECHAT_ENABLED | 客户端微信开关，需平台和服务端配置匹配 |
+| TEST_TOOLS_ENABLED | debug 联调工具开关，默认 false；release 强制 false |
 | VERSION_CODE / VERSION_NAME | 安装升级版本号与显示版本，版本字符串最多 32 字节 |
 
-第一次复制请完成 [新产品配置清单](docs/new-product-checklist.md)。当前客户端使用包名 cn.fuyaoshouhu.app、测试后端及公开微信 AppID；这是现有联调配置，复制时必须改为新产品自己的配置。用户已反馈原账号阶段测试通过；本次新增资料及注销流程需先升级后端 SQL 002 并部署，再做真机联调。参见 [供应商接入](docs/providers.md)。
+第一次复制请完成 [新产品配置清单](docs/new-product-checklist.md)。当前客户端使用包名 cn.fuyaoshouhu.app、测试后端及公开微信 AppID；这是现有联调配置，复制时必须改为新产品自己的配置。资料/注销后端已在 Jenkins #20 发布；本次联调工具仍需 SQL 003 与新版后端部署，不能只安装 APK。参见 [供应商接入](docs/providers.md)。
 
 ## 账号行为
 

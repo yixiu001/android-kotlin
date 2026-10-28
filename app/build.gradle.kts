@@ -39,7 +39,9 @@ android {
     }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     buildTypes {
+        debug { buildConfigField("boolean", "TEST_TOOLS_ENABLED", product.getProperty("TEST_TOOLS_ENABLED", "false").toBooleanStrict().toString()) }
         release {
+            buildConfigField("boolean", "TEST_TOOLS_ENABLED", "false")
             isMinifyEnabled = true; isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfigs.findByName("productRelease")?.let { signingConfig = it }
