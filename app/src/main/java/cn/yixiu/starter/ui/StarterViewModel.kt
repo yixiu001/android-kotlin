@@ -30,17 +30,24 @@ class StarterViewModel(application: Application) : AndroidViewModel(application)
             "recover" -> run("原请求已恢复") { engine.recover() }
             "abandonChallenge" -> run("已放弃上次挑战结果；请等待冷却结束后重新获取验证码或微信授权。") { engine.abandonChallenge() }
             "logout" -> run("已退出，正在使用新游客账号") { engine.logout() }
-            "sms" -> run("验证码已发送，请查看手机短信") {
+            "profile" -> run("资料已更新") {
+                val input = com.google.gson.JsonParser.parseString(action.value).asJsonObject
+                engine.updateProfile(input.get("nickname")?.asString, input.get("avatar")?.asString)
+            }
+            "sms", "deleteSms" -> run("验证码已发送，请查看手机短信") {
                 check(BuildConfig.SMS_ENABLED) { "本产品暂未开放短信登录" }
                 val phone = action.value.trim().let { if (it.startsWith("+86")) it else "+86" + it }
-                engine.requestSms(phone)
+                engine.requestSms(phone, deletion = action.name == "deleteSms")
             }
-            "phone" -> run("身份验证成功") { engine.submitPhone(action.value.trim()); engine.me() }
-            "wechat" -> run("") {
+            "phone" -> run("") {
+                val deleted = engine.submitPhone(action.value.trim()); engine.me()
+                app.notice.value = if (deleted) "账号已注销，当前为新游客；原手机号和微信 30 天内不能注册或绑定。" else "身份验证成功"
+            }
+            "wechat", "deleteWechat" -> run("") {
                 check(BuildConfig.WECHAT_ENABLED && BuildConfig.WECHAT_APP_ID.isNotBlank()) { "微信登录待配置移动应用 AppID" }
                 val bridge = WechatBridge(app)
                 bridge.checkAvailable()
-                val challenge = engine.requestWechat()
+                val challenge = engine.requestWechat(useProfile = action.value == "true", deletion = action.name == "deleteWechat")
                 try { bridge.launch(challenge) } catch (error: Exception) { engine.cancelWechat(); throw error }
             }
             "health" -> run("服务器健康检查通过") { engine.health() }
@@ -73,6 +80,11 @@ fun friendlyError(error: Exception): String = when (error) {
         "RATE_LIMITED" -> "请求过于频繁，请在 " + error.reply.retryAfter.coerceAtLeast(1) + " 秒后重试。"
         "IDENTITY_ALREADY_BOUND" -> "此手机号或微信已绑定其他正式账号，无法合并。"
         "IDENTITY_TYPE_ALREADY_BOUND" -> "当前账号已绑定另一手机号或微信，暂不支持换绑。"
+        "IDENTITY_REGISTRATION_BLOCKED" -> {
+            val until = error.reply.data.get("available_at")?.takeUnless { it.isJsonNull }?.asString
+            val display = runCatching { java.time.Instant.parse(until).atZone(java.time.ZoneId.systemDefault()).format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) }.getOrNull()
+            "此身份处于注销后的 30 天限制期，暂不能注册或绑定。" + (display?.let { "可用时间：$it。" } ?: "")
+        }
         "VERIFICATION_INVALID" -> "验证码或授权无效、过期，请检查或重新获取。"
         "ACCOUNT_DISABLED" -> "账号已被停用，请联系管理员。"
         "SESSION_INVALID", "REFRESH_TOKEN_INVALID" -> "会话已失效，请确认后重新开始并验证原有身份。"

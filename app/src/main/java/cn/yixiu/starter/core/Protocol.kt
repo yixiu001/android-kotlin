@@ -10,7 +10,8 @@ object Protocol {
     private val random = SecureRandom()
     val paths = listOf("/auth/guest", "/me", "/auth/sms/challenges", "/auth/login/phone",
         "/me/identities/phone", "/auth/wechat/challenges", "/auth/login/wechat",
-        "/me/identities/wechat", "/auth/refresh", "/auth/logout")
+        "/me/identities/wechat", "/auth/refresh", "/auth/logout", "/me/profile", "/me/delete/phone", "/me/delete/wechat")
+    val avatars = listOf("mint", "ocean", "sunset", "violet", "rose", "slate")
     fun origin(input: String): String {
         val uri = try { URI(input.trim()) } catch (_: Exception) { throw IllegalArgumentException("请输入合法的 HTTPS 地址") }
         require(uri.scheme == "https" && !uri.host.isNullOrBlank() && uri.userInfo == null &&

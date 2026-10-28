@@ -18,20 +18,21 @@ API_BASE_URL 只填 HTTPS origin，例如 `https://fysh-api.tongyiwl.bond`，不
 - 新产品不能继续用模板测试后端，否则会共用账号数据。只改 Android 包名不会隔离后端。
 - 微信移动应用需登记新包名和实际 APK 的 MD5，AppID 与后端一致。
 - 短信模板/签名/RAM 密钥在服务器配置，Android 只调用 Hyperf。
-- 后端未提供解绑、换绑、注销等功能，不要添加假入口。
+- 不支持解绑或换绑；已提供资料编辑和手机号/微信验证注销。新后端执行 sql/001→002，已有库仅升级 002，再发布后端和新版 App。
+- 头像从内置项选择，或首次绑定微信时选择使用微信头像链接；不上传图片，不需要 OSS。
 
 ## 签名与升级
 
 - 发布密钥保存在工程外并备份，用签名向导或不入库的 keystore.properties。
 - 运行 gradlew.bat :app:signingReport 查看 debug 公开指纹；不分享密钥文件和密码。
 - debug 未加 applicationIdSuffix。和 release 同包名不同签名时不能直接覆盖安装，卸载会丢失未绑定游客。
-- Vault schema=1，修改结构要写升级迁移测试，解密失败不能自动清空账号。
+- Vault schema=1 保持兼容；新增微信资料选择为默认 false 的可选字段，旧 challenge 不会自动同意导入。解密失败不能自动清空账号。
 
 ## 业务扩展
 
 - 从首页扩展业务页面；通过 Repository 协调网络与缓存，页面不管理令牌。
 - 新增并发请求捕获 generation/tokenVersion，账号切换后丢弃旧响应。
-- 业务私有缓存按账号分目录，接入 onAccountCleared，退出/升级/合并时清理。
+- 业务私有缓存按账号分目录，接入 onAccountCleared，退出/升级/合并/注销时清理；新增业务表同时实现后端注销清理。
 - 后端业务数据合并需要注册业务合并器，基础账号模块不会自动合并任意业务表。
 - 规模增长后再拆分模块，当前单 app 工程便于复制维护。
 

@@ -29,9 +29,9 @@ class WechatCallbackActivity : Activity(), IWXAPIEventHandler {
         app.scope.launch {
             try {
                 if (response.errCode == BaseResp.ErrCode.ERR_OK) {
-                    app.engine.submitWechat(response.state.orEmpty(), response.code.orEmpty())
+                    val deleted = app.engine.submitWechat(response.state.orEmpty(), response.code.orEmpty())
                     app.engine.me()
-                    app.notice.value = "微信身份验证成功"
+                    app.notice.value = if (deleted) "账号已注销，当前为新游客；原手机号和微信 30 天内不能注册或绑定。" else "微信身份验证成功"
                 } else {
                     // 取消/错误回调不清除可能属于较新授权的 state，也绝不提交 code。
                     app.notice.value = if (response.errCode == BaseResp.ErrCode.ERR_USER_CANCEL) "已取消微信授权" else "微信授权未完成，请重试"

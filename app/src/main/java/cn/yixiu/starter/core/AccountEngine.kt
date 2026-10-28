@@ -29,7 +29,7 @@ class AccountEngine(private val store: StateStore, private val api: ApiTransport
         gate.withLock { withContext(NonCancellable + Dispatchers.IO) { block() } }
     private fun commit(next: VaultState) { store.save(next); vault = next; publish() }
     private fun publish() {
-        val hidden = vault.blocked != null || vault.pending?.request?.path == "/auth/logout"
+        val hidden = vault.blocked != null || vault.pending?.request?.path == "/auth/logout" || vault.pending?.request?.path?.startsWith("/me/delete/") == true
         val user = vault.profile?.getAsJsonObject("user")
         val identities = vault.profile?.getAsJsonObject("identities")
         view.value = AccountView(vault.origin,
@@ -38,7 +38,11 @@ class AccountEngine(private val store: StateStore, private val api: ApiTransport
             if (hidden) "" else identities?.getAsJsonObject("phone")?.get("masked")?.takeUnless { it.isJsonNull }?.asString.orEmpty(),
             !hidden && (identities?.getAsJsonObject("wechat")?.get("bound")?.asBoolean == true),
             vault.session != null, vault.pending?.request?.path, hidden, vault.blocked,
-            vault.sms?.resendAt ?: 0, vault.sms?.expiresAt ?: 0, vault.sms?.phone.orEmpty(), vault.notBefore)
+            vault.sms?.resendAt ?: 0, vault.sms?.expiresAt ?: 0, if (hidden) "" else vault.sms?.phone.orEmpty(), vault.notBefore,
+            if (hidden) "" else user?.get("nickname")?.takeUnless { it.isJsonNull }?.asString.orEmpty(),
+            if (hidden) "" else user?.get("avatar")?.takeUnless { it.isJsonNull }?.asString.orEmpty(),
+            if (hidden) "" else user?.get("avatar_url")?.takeUnless { it.isJsonNull }?.asString.orEmpty(),
+            vault.sms?.purpose.orEmpty())
     }
     private fun ready(checkBlocked: Boolean = true) {
         if (vault.pending != null) throw PendingOperation()
@@ -77,23 +81,40 @@ class AccountEngine(private val store: StateStore, private val api: ApiTransport
         writeLocked("/auth/logout", body("refresh_token" to session().refresh), false)
         guestLocked()
     }
-    suspend fun requestSms(phone: String) = exclusive {
+    suspend fun updateProfile(nickname: String?, avatar: String?) = exclusive {
         ready()
+        require(nickname != null || avatar != null) { "请先修改资料" }
+        nickname?.let { require(it.isNotBlank() && it.codePointCount(0, it.length) <= 64 && !it.any(Char::isISOControl)) { "昵称需要 1–64 个字符，不能包含控制字符" } }
+        avatar?.let { require(it in Protocol.avatars) { "请选择内置头像" } }
+        val input = JsonObject().apply { nickname?.let { addProperty("nickname", it.trim()) }; avatar?.let { addProperty("avatar", it) } }
+        writeLocked("/me/profile", input.toString())
+    }
+    suspend fun requestSms(phone: String, deletion: Boolean = false) = exclusive {
+        ready()
+        if (deletion) require(view.value.accountType == "member" && view.value.phone.isNotBlank()) { "请使用当前账号已绑定的手机号验证注销" }
         require(phone.matches(Regex("\\+861[3-9][0-9]{9}"))) { "请输入中国大陆手机号" }
         require(now() >= (vault.sms?.resendAt ?: 0)) { "请等待短信倒计时结束" }
-        writeLocked("/auth/sms/challenges", body("phone" to phone, "purpose" to purpose("phone")))
+        writeLocked("/auth/sms/challenges", body("phone" to phone, "purpose" to if (deletion) "delete" else purpose("phone")))
     }
     suspend fun submitPhone(code: String) = exclusive {
         ready()
         require(code.matches(Regex("[0-9]{6}"))) { "验证码须为 6 位数字" }
         val challenge = vault.sms ?: throw IllegalArgumentException("请先获取验证码")
         require(challenge.expiresAt > now()) { "验证码已过期，请重新获取" }
-        writeLocked(if (challenge.purpose == "login") "/auth/login/phone" else "/me/identities/phone",
+        val deleting = challenge.purpose == "delete"
+        writeLocked(if (deleting) "/me/delete/phone" else if (challenge.purpose == "login") "/auth/login/phone" else "/me/identities/phone",
             body("challenge_id" to challenge.id, "code" to code))
+        if (deleting) guestLocked()
+        deleting
     }
-    suspend fun requestWechat(): Challenge = exclusive {
+    suspend fun requestWechat(useProfile: Boolean = false, deletion: Boolean = false): Challenge = exclusive {
         ready()
-        writeLocked("/auth/wechat/challenges", body("purpose" to purpose("wechat")))
+        if (deletion) require(view.value.accountType == "member" && view.value.wechatBound) { "请使用当前账号已绑定的微信验证注销" }
+        val input = JsonObject().apply {
+            addProperty("purpose", if (deletion) "delete" else purpose("wechat"))
+            if (useProfile && !deletion) addProperty("use_wechat_profile", true)
+        }
+        writeLocked("/auth/wechat/challenges", input.toString())
         vault.wechat ?: throw IOException("微信授权参数缺失")
     }
     suspend fun submitWechat(state: String, code: String) = exclusive {
@@ -101,8 +122,14 @@ class AccountEngine(private val store: StateStore, private val api: ApiTransport
         val challenge = vault.wechat ?: throw IllegalArgumentException("微信授权已失效，请重新发起")
         require(challenge.state == state && challenge.expiresAt > now()) { "微信授权状态不匹配或已过期" }
         require(code.matches(Regex("[A-Za-z0-9_-]{1,256}"))) { "无效的微信授权结果" }
-        writeLocked(if (challenge.purpose == "login") "/auth/login/wechat" else "/me/identities/wechat",
-            body("challenge_id" to challenge.id, "state" to state, "code" to code))
+        val deleting = challenge.purpose == "delete"
+        val input = JsonObject().apply {
+            addProperty("challenge_id", challenge.id); addProperty("state", state); addProperty("code", code)
+            if (!deleting) addProperty("use_wechat_profile", challenge.useWechatProfile)
+        }
+        writeLocked(if (deleting) "/me/delete/wechat" else if (challenge.purpose == "login") "/auth/login/wechat" else "/me/identities/wechat", input.toString())
+        if (deleting) guestLocked()
+        deleting
     }
     suspend fun cancelWechat() = exclusive { if (vault.pending == null) commit(vault.copy(wechat = null)) }
     suspend fun abandonChallenge() = exclusive {
@@ -117,7 +144,7 @@ class AccountEngine(private val store: StateStore, private val api: ApiTransport
     suspend fun recover() = exclusive {
         val pending = vault.pending ?: return@exclusive
         if (now() < pending.notBefore) throw ApiFailure(ApiReply(429, "RATE_LIMITED", retryAfter = (pending.notBefore - now() + 999) / 1000))
-        val logout = pending.request.path == "/auth/logout"
+        val logout = pending.request.path == "/auth/logout" || pending.request.path.startsWith("/me/delete/")
         val login = pending.request.path in setOf("/auth/login/phone", "/auth/login/wechat")
         sendPendingLocked()
         if (logout) guestLocked()
@@ -191,6 +218,16 @@ class AccountEngine(private val store: StateStore, private val api: ApiTransport
                 if (data.get("logged_out")?.asBoolean != true) throw IOException("退出结果不完整")
                 next = VaultState(vault.origin, vault.installationId, vault.generation + 1)
             }
+            "/me/delete/phone", "/me/delete/wechat" -> {
+                if (data.get("deleted")?.asBoolean != true) throw IOException("注销结果不完整，保留原请求等待恢复")
+                next = VaultState(vault.origin, vault.installationId, vault.generation + 1)
+            }
+            "/me/profile" -> {
+                if (!data.has("user")) throw IOException("资料结果不完整")
+                val profile = vault.profile?.deepCopy() ?: JsonObject()
+                profile.add("user", data.get("user").deepCopy())
+                next = next.copy(profile = profile)
+            }
             "/auth/sms/challenges", "/auth/wechat/challenges" -> {
                 val id = data.get("challenge_id")?.asString.orEmpty()
                 if (!id.matches(Regex("[A-Za-z0-9_-]{43}"))) throw IOException("挑战结果不完整")
@@ -204,18 +241,20 @@ class AccountEngine(private val store: StateStore, private val api: ApiTransport
                     val state = data.get("state")?.asString.orEmpty()
                     require(state.matches(Regex("[A-Za-z0-9_-]{43}")))
                     next = next.copy(wechat = Challenge(id, purpose, pending.createdAt + expires * 1000,
-                        state = state, appId = data.get("appid").asString, scope = data.get("scope").asString))
+                        state = state, appId = data.get("appid").asString, scope = data.get("scope").asString,
+                        useWechatProfile = purpose != "delete" && requestBody.get("use_wechat_profile")?.asBoolean == true))
                 }
             }
             "/me/identities/phone", "/me/identities/wechat" -> {
                 if (data.get("bound")?.asBoolean != true || !data.has("identities")) throw IOException("绑定结果不完整")
                 val profile = vault.profile?.deepCopy() ?: JsonObject()
                 profile.add("identities", data.get("identities").deepCopy())
+                data.getAsJsonObject("user")?.let { profile.add("user", it.deepCopy()) }
                 next = next.copy(profile = profile, sms = null, wechat = null)
             }
         }
         commit(next)
-        if (pending.request.path == "/auth/logout") onAccountCleared()
+        if (pending.request.path == "/auth/logout" || pending.request.path.startsWith("/me/delete/")) onAccountCleared()
     }
     private fun ensureSuccess(reply: ApiReply) {
         if (reply.code == "OK" && reply.status in 200..299) return
