@@ -6,7 +6,7 @@
 
 本轮已改为[当前账号一键重置](test-tools.md)：本项目 TEST_TOOLS_ENABLED=true，缺项回退 false，release 强制 false。普通 access 只用于 prepare，短期 grant 用于 execute；成功自动清除本地，未知结果只重试原授权。AccountEngine 串行锁与账号/origin/generation 检查防止清错用户。不记录或持久化工具凭证。后端 prepare 已随 6052fe8 通过 Jenkins #21 部署，测试工具开关已生效。
 
-安卓正在完成提交前审阅；测试库 SQL003 已执行，后端 Jenkins #21 部署成功。原有用户、身份、冻结与重置审计摘要未变，授权表为空，现有 Redis 配置不变，未清除任何设备或服务器账号。下文 `132ecee` / Jenkins #20 仍是上一轮资料及注销功能的发布快照。
+安卓功能提交 9130753 已完成复审并推送 main；测试库 SQL003 已执行，后端 Jenkins #21 部署成功。原有用户、身份、冻结与重置审计摘要未变，授权表为空，现有 Redis 配置不变，未清除任何设备或服务器账号。下文 `132ecee` / Jenkins #20 仍是上一轮资料及注销功能的发布快照。
 
 当前一键流程 47 测试通过 / 1 个真实 smoke 跳过；debug APK、release Kotlin 编译通过，lint 0 错误 / 9 条依赖版本提示。详见[联调工具验收](verification-2026-10-29-test-tools.md)。下文 30 项为上一轮资料与注销的历史验收。
 
