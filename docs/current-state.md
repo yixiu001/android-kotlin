@@ -1,22 +1,34 @@
 # 当前状态
 
-更新：2026-10-29（北京时间）。后端协议见[账号 API](https://github.com/yixiu001/hyperf-swow/blob/main/docs/api/android-account.md)。
+更新：2026-10-29（北京时间）。协议见[后端账号 API](https://github.com/yixiu001/hyperf-swow/blob/main/docs/api/android-account.md)。
 
-## 已实现
+## 当前工作树：微信登录后资料确认（尚未发布）
 
-本轮已改为[当前账号一键重置](test-tools.md)：本项目 TEST_TOOLS_ENABLED=true，缺项回退 false，release 强制 false。普通 access 只用于 prepare，短期 grant 用于 execute；成功自动清除本地，未知结果只重试原授权。AccountEngine 串行锁与账号/origin/generation 检查防止清错用户。不记录或持久化工具凭证。后端 prepare 已随 6052fe8 通过 Jenkins #21 部署，测试工具开关已生效。
+本轮在 feat/wechat-profile-confirm 实现，尚未提交、推送或部署。必须先执行后端 SQL004 并发布配套后端，再安装新版 APK 联调；已发布旧后端不具备本轮确认接口。
 
-安卓功能提交 9130753 已完成复审并推送 main；测试库 SQL003 已执行，后端 Jenkins #21 部署成功。原有用户、身份、冻结与重置审计摘要未变，授权表为空，现有 Redis 配置不变，未清除任何设备或服务器账号。下文 `132ecee` / Jenkins #20 仍是上一轮资料及注销功能的发布快照。
+普通微信登录/绑定只请求可选候选，不自动写资料。先建立最终用户和最终会话，再展示实际微信昵称和头像；自动模式仅允许补充最终账号缺失字段，完整账号不弹窗。每项独立勾选，也可跳过；候选获取失败、格式异常或过期均不影响登录。
 
-当前一键流程 47 测试通过 / 1 个真实 smoke 跳过；debug APK、release Kotlin 编译通过，lint 0 错误 / 9 条依赖版本提示。详见[联调工具验收](verification-2026-10-29-test-tools.md)。下文 30 项为上一轮资料与注销的历史验收。
+“编辑昵称和头像 → 使用微信资料”供正式账号重新授权当前微信（未绑定时先说明绑定），预览后显式替换选中字段。不同微信绑定冲突由服务端拒绝。游客编辑入口说明登录可能切换已有账号，进入普通登录流程。
 
-保留自动游客、短信/微信登录绑定、老账号合并、双身份和独立会话。新增“我的 → 编辑昵称和头像”“注销账号”入口：昵称可改，头像可选 6 个内置项；首次微信绑定可选择以微信资料补空字段，已有资料不覆盖、合并目标不覆盖。
+候选与手动授权意图保存在原 schema=1 加密 Vault，新增可选成员兼容旧 Gson 数据，无需清空应用数据。候选绑定 origin/user/session/generation；/me 与同会话刷新保留，跳过持久化，退出和账号/环境切换清除。未知确认保留原请求、凭证与幂等 key；网络/429/5xx 不消耗候选，成功或明确候选终态错误才清除。确认不重用 OAuth code、不再次调用微信。日志隐藏候选凭证及相关个人资料。
 
-微信头像使用受控 HTTPS 链接，限界读取、无磁盘缓存，失败回退内置头像；没有图片上传或 OSS。注销先说明即时生效/30 天身份限制，再验证当前绑定的手机号或微信；成功后清除本地凭据和私有缓存并进入新游客。未知结果隐藏资料，原请求持久化恢复。
+自动游客、短信登录绑定、老账号合并、双身份与独立会话、昵称/内置头像、验证注销及 debug 一键重置保持原行为。头像仍受控 HTTPS、限界读取、禁重定向、无磁盘缓存；无上传或 OSS。注销立即生效，原身份 30 天内受限，未知结果隐藏资料并恢复原请求。
 
-绑定后不可更换或解绑。新后端共 13 个账号接口。Android 功能提交 `132ecee` 已推送 main，debug APK 已构建；后端 `9db609e` 已完成测试库 SQL 002 升级及 Jenkins #20 部署，HTTPS 资料/会话冒烟通过，Redis 配置保持不变。
+## 本轮验证
 
-## 配置（保持不变）
+81 项测试：80 通过、1 个真实 LiveApiSmokeTest 按默认配置跳过、0 失败。新增 33 项 WechatProfileTest 覆盖最终用户、缺失/完整/部分/异常候选、独立替换、跳过/Gson 重建、过期、未知确认/原请求回放、429/503、同会话刷新、账号环境隔离、授权意图重建与旧回调隔离、旧 Vault、日志脱敏。
+
+执行成功：`:app:testDebugUnitTest :app:assembleDebug :app:lintDebug :app:compileReleaseKotlin --console=plain`，JDK 为 `D:/android-studio/jbr`。lint 0 错误、9 个既有依赖版本提示。APK：`app/build/outputs/apk/debug/app-debug.apk`；SHA256 `be680133503f73a1657f9b9c06417dc6f59bcc9185963b900327e2b9d5538914`。
+
+未运行设备 UI/外部微信/短信或真实接口冒烟；未执行 SQL004、服务部署、设备清理或账号重置。完整本地报告见 [微信资料确认验收](verification-2026-10-29-wechat-profile-confirm.md)。
+
+## 已发布基线（历史，与本轮分开）
+
+Android `9130753` / 后端 `6052fe8` / Jenkins #21 / SQL003 是一键联调工具基线。当时 47 项通过、1 个真实 smoke 跳过，见[历史联调验收](verification-2026-10-29-test-tools.md)。普通 access 经 AccountEngine 调试桥 prepare，短期 grant execute；成功清本地，未知只重试原授权，release 不包含调试实现。
+
+更早的 Android `132ecee` / 后端 `9db609e` / Jenkins #20 / SQL002 是资料编辑和注销基线，当时 30 项通过、1 个真实 smoke 跳过，见[历史验收](verification-2026-10-29-profile-deletion.md)。历史微信授权前选择资料的描述已被本轮登录后预览取代，不能作为本轮验收步骤。原阶段用户反馈测试通过，历史微信 10005 不是当前已知阻塞。
+
+## 配置保持不变
 
 | 项目 | 值 |
 | --- | --- |
@@ -28,12 +40,20 @@
 | 本机 debug 签名 MD5 | 223fbaaba46bea0e5ef02ee43444dc90 |
 | 环境配置 | 单份 product.properties；尚无 test/prod 变体 |
 
-Vault schema=1；新加的微信资料选择缺省 false，旧存储不需要清空。新头像/昵称从服务端 profile 中读取，不另建本地个人资料来源。
+Redis、后端环境和产品配置未修改。生产签名发布、隐私政策、测试/生产变体与设备管理仍不在本期范围。操作入口见[文档导航](README.md)及[接口映射](api-map.md)。
 
-## 验证
 
-单元测试 **30 通过 / 1 个真实 smoke 跳过**，debug 构建成功，lint **0 错误 / 9 个原有依赖提示**。详见[本轮验收及 APK 摘要](verification-2026-10-29-profile-deletion.md)。原阶段用户已明确反馈测试通过，旧文档的微信 10005 不再作为当前已知阻塞。
+## 独立审查 round1 修复
 
-本轮尚未运行连接设备的 UI、微信外部授权、短信及新增注销真机验收；未向线上发送真实注销请求。后端已升级，可安装新版 APK 用专用测试账号联调。生产签名发布、隐私政策、测试/生产配置拆分、设备管理不在本期范围。
+已修复 I1：ACCESS_TOKEN_EXPIRED 明确拒绝原写入后，原 path/body/manual intent 与 origin/user/session/generation 作为加密 Pending 的非 wire continuation 和 refresh 请求原子落盘。未知 refresh 重放同一请求；成功刷新和续接的新 Pending 原子落盘，再发送原操作；续接最多一次刷新，不重放已成功的 OAuth 交换。恢复按原操作执行登录后的 /me 或注销后的新游客生命周期。续接前后校验账号/会话/环境/代数，变化即停止。新增 8 项 scoped regression，最初 3 项恢复断言失败和 1 项本地 session 边界断言失败均已修复。
 
-产物：`app/build/outputs/apk/debug/app-debug.apk`。操作入口见[文档导航](README.md)和[接口映射](api-map.md)。
+M1：预览的昵称/头像独立勾选改为 rememberSaveable(previewId)，保留旋转选择，仍须明确确认。此项已编译/lint 验证；未运行设备旋转验收。
+
+修复后完整要求命令 BUILD SUCCESSFUL（13 秒），78 项测试 77 通过 / 1 真实 smoke 跳过；lint 0 错误 / 9 条既有提示，debug APK 与 release Kotlin 均成功。上方 APK hash 为修复后产物。仍未提交/推送/部署/调用真实接口，SQL004 和后端发布仍须先于真机联调。
+
+
+## 最终集成审查修复（当前验收）
+
+仅对 `/me/profile/wechat` 的 AUTH_RESULT_EXPIRED 回执过期，清除无法再查询的确认 Pending 和候选，保留当前会话，不认定成功、失败或会话无效，不自动重写。提示点击现有“更新账号信息”（GET /me）查看实际资料；真正的 SESSION_INVALID 继续隐藏资料并走原失效处理。登录/刷新/退出/注销回执过期策略不变。未新增恢复框架或网络动作。
+
+新增 3 项聚焦回归：丢失确认响应后回执过期仍可 /me 核对实际资料且不重复写入；/me 真正会话失效仍受保护；登录回执过期保留原阻断策略。测试先红（2 失败、1 原策略通过）后绿。最终全量构建一次 BUILD SUCCESSFUL（12 秒），81 项测试：80 通过、1 个默认真实 smoke 跳过；lint 0 错误、9 条既有提示，debug APK 与 release Kotlin 编译成功。上方 hash 已更新为本次最终产物。此前 round1 数字为历史修复记录。

@@ -178,7 +178,7 @@ class AccountEngineTest {
         val engine = engine(store, api)
         api.answer = { ok(json("challenge_id" to "c".repeat(43), "state" to "s".repeat(43), "appid" to "wx123", "scope" to "snsapi_userinfo").apply { addProperty("expires_in",300) }) }
         engine.requestWechat()
-        assertEquals("""{"purpose":"bind_wechat"}""", api.requests.last().body)
+        assertEquals("""{"purpose":"bind_wechat","use_wechat_profile":true}""", api.requests.last().body)
         api.answer = { ApiReply(409, "IDENTITY_ALREADY_BOUND") }
         try { engine.submitWechat("s".repeat(43), "wechat-code"); fail() } catch (_: ApiFailure) {}
         assertEquals("/me/identities/wechat", api.requests.last().path)

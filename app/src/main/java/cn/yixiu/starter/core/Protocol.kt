@@ -10,7 +10,7 @@ object Protocol {
     private val random = SecureRandom()
     val paths = listOf("/auth/guest", "/me", "/auth/sms/challenges", "/auth/login/phone",
         "/me/identities/phone", "/auth/wechat/challenges", "/auth/login/wechat",
-        "/me/identities/wechat", "/auth/refresh", "/auth/logout", "/me/profile", "/me/delete/phone", "/me/delete/wechat")
+        "/me/identities/wechat", "/auth/refresh", "/auth/logout", "/me/profile", "/me/profile/wechat", "/me/delete/phone", "/me/delete/wechat")
     val avatars = listOf("mint", "ocean", "sunset", "violet", "rose", "slate")
     fun origin(input: String): String {
         val uri = try { URI(input.trim()) } catch (_: Exception) { throw IllegalArgumentException("请输入合法的 HTTPS 地址") }
@@ -34,7 +34,8 @@ object Protocol {
             value.isJsonObject -> JsonObject().apply {
                 value.asJsonObject.entrySet().forEach { (key, child) ->
                     if (key.lowercase() in setOf("access_token","refresh_token","authorization","idempotency-key",
-                            "phone","code","state","challenge_id","installation_id","openid","unionid"))
+                            "phone","code","state","challenge_id","installation_id","openid","unionid",
+                            "preview_id","wechat_profile","candidate","nickname","avatar_url"))
                         addProperty(key, "[已隐藏]")
                     else add(key, clean(child))
                 }

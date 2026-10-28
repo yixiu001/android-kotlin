@@ -38,12 +38,10 @@ private val Teal = Color(0xFF16756A)
     var editProfile by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
     var deletePhoneForm by remember { mutableStateOf(false) }
-    var confirmWechat by remember { mutableStateOf(false) }
-    var useWechatProfile by remember { mutableStateOf(false) }
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) { while (true) { delay(1000); now = System.currentTimeMillis() } }
     LaunchedEffect(account.userId, account.phone, account.wechatBound, account.privateHidden) {
-        phoneForm = false; deletePhoneForm = false; editProfile = false; confirmDelete = false; confirmWechat = false
+        phoneForm = false; deletePhoneForm = false; editProfile = false; confirmDelete = false
     }
     val actionable = !busy && account.pendingPath == null && !account.privateHidden && now >= account.notBefore
     Scaffold(bottomBar = {
@@ -124,11 +122,7 @@ private val Teal = Color(0xFF16756A)
                             enabled = actionable && BuildConfig.SMS_ENABLED) {
                             Text(if (account.accountType == "member") "绑定手机号" else "手机号登录")
                         }
-                        if (!account.wechatBound) OutlinedButton(onClick = {
-                            if (account.nickname.isBlank() || (account.avatar.isBlank() && account.avatarUrl.isBlank())) {
-                                useWechatProfile = false; confirmWechat = true
-                            } else action(UiAction("wechat"))
-                        },
+                        if (!account.wechatBound) OutlinedButton(onClick = { action(UiAction("wechat")) },
                             modifier = Modifier.fillMaxWidth(),
                             enabled = actionable && BuildConfig.WECHAT_ENABLED && BuildConfig.WECHAT_APP_ID.isNotBlank()) {
                             Text(if (!BuildConfig.WECHAT_ENABLED || BuildConfig.WECHAT_APP_ID.isBlank()) "微信登录（待配置）"
@@ -151,17 +145,9 @@ private val Teal = Color(0xFF16756A)
         }
     }
     if (editProfile && !account.privateHidden) ProfileEditor(account, busy, action) { editProfile = false }
-    if (confirmWechat) AlertDialog(onDismissRequest = { confirmWechat = false },
-        title = { Text("微信授权") },
-        text = { Column {
-            Text("是否使用微信昵称和头像补充尚未设置的资料？已有资料不会被覆盖，切换老账号时保留老账号资料。头像使用微信链接，失效时显示默认头像。")
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(checked = useWechatProfile, onCheckedChange = { useWechatProfile = it })
-                Text("使用微信昵称和头像")
-            }
-        } },
-        confirmButton = { TextButton(onClick = { confirmWechat = false; action(UiAction("wechat", useWechatProfile.toString())) }) { Text("继续微信授权") } },
-        dismissButton = { TextButton(onClick = { confirmWechat = false }) { Text("取消") } })
+    account.wechatProfile?.let { preview ->
+        WechatProfileDialog(preview, busy || account.pendingPath != null, now, action)
+    }
     if (confirmDelete) AlertDialog(onDismissRequest = { confirmDelete = false },
         title = { Text("注销账号？") },
         text = { Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
