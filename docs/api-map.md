@@ -15,7 +15,7 @@
 | POST /auth/refresh | refresh，过期内部触发 | 自动刷新/debug 手动刷新 |
 | POST /auth/logout | logout | 确认退出当前账号 |
 | POST /me/profile | updateProfile | 我的 → 编辑昵称和头像 |
-| POST /me/profile/wechat | confirmWechatProfile | 登录后预览 / 编辑资料 → 使用微信资料 → 选择并确认 |
+| POST /me/profile/wechat | confirmWechatProfile | 微信登录/绑定后的单次资料选择，无独立重新授权入口 |
 | POST /me/delete/phone | requestSms(deletion=true) + submitPhone | 注销说明 → 手机号验证 → 验证并立即注销 |
 | POST /me/delete/wechat | requestWechat(deletion=true) + submitWechat | 注销说明 → 验证微信并立即注销 |
 | GET / | health | debug 健康检查 |
@@ -26,12 +26,12 @@ POST 发送前保存原 origin/path/body/access/key；key 是 SecureRandom 32 �
 
 中文错误根据稳定业务码映射，不展示供应商详情。request_id 用于后台关联。正式账号冲突由服务端裁决，客户端不强行合并。
 
-手动资料编辑允许昵称和 6 个内置头像；不上传图片、不包含 OSS 配置。普通微信 challenge 和 login/bind exchange 均发送 use_wechat_profile=true（注销 challenge 为 false；最终 /me/delete/wechat 按既有严格字段省略该标志，不请求候选），只获取可选候选，不自动写资料。最终会话和用户先落盘，再针对最终用户缺失字段展示预览。正式账号从编辑资料重新发起 bind_wechat（已绑定也重新授权），预览后显式替换独立勾选字段；游客入口引导登录并说明可能切换账号。头像链接仅允许受控微信 HTTPS 域名，限界下载、禁重定向、无磁盘缓存，失败显示默认头像。内置头像客户端本地绘制。
+手动资料编辑允许昵称和 6 个内置头像；不上传图片、不包含 OSS 配置，不发起微信授权。普通微信 challenge 和 login/bind exchange 均发送 use_wechat_profile=true（注销 challenge 为 false；最终 /me/delete/wechat 按既有严格字段省略该标志，不请求候选），只获取可选候选，不自动写资料。最终会话和用户先落盘，再针对最终用户缺失字段提供一次可跳过的选择；完整账号不弹窗。头像链接仅允许受控微信 HTTPS 域名，限界下载、禁重定向、无磁盘缓存，失败显示默认头像。内置头像客户端本地绘制。
 
 注销用途为 delete，与登录/绑定严格分开。注销未确认时隐藏资料并保留原请求，恢复成功后清理凭证/缓存并创建新游客。会话无效或恢复期已过不假定注销成功，由用户确认重新开始。成功结果含 registration_available_at；被冻结身份错误 IDENTITY_REGISTRATION_BLOCKED 的 available_at 在中文提示中显示为本机时区时间。
 
 
-微信确认严格 JSON `{preview_id,use_nickname,use_avatar,overwrite}`，Bearer + 原子保存的 Idempotency-Key，至少选择一项。自动预览 overwrite=false；编辑入口 overwrite=true。候选只在加密 Vault 中保存，绑定 origin/user/session/generation，TTL 600 秒；跳过落盘后 /me 不重新引入旧候选，刷新同一会话保留，切换/退出清除。手动意图保存在 Pending/Challenge 的非 wire 字段，重试不会添加 API 未定义字段。确认网络未知、429 或 5xx 保留原请求和候选；成功及 WECHAT_PROFILE_EXPIRED/INVALID/CHANGED 清除候选。过期不影响登录，编辑资料可重新授权；确认不再次交换 OAuth code。日志隐藏 preview_id、候选、昵称和头像 URL。
+微信确认严格 JSON `{preview_id,use_nickname,use_avatar,overwrite}`，Bearer + 原子保存的 Idempotency-Key，至少选择一项。当前正常流程 overwrite=false；旧版本 overwrite=true 与手动意图恢复仅为升级兼容保留，新 UI 无发起入口。候选只在加密 Vault 中保存，绑定 origin/user/session/generation，TTL 600 秒；跳过落盘后 /me 或重启不重新引入旧候选，刷新同一会话保留尚未完成的选择，切换/退出清除。确认网络未知、429 或 5xx 保留原请求和候选；成功及 WECHAT_PROFILE_EXPIRED/INVALID/CHANGED 清除候选。过期结束本次选择且不影响登录，不引导重新授权；确认不再次交换 OAuth code。日志隐藏 preview_id、候选、昵称和头像 URL。
 
 本流程尚未部署/推送；SQL004 与配套后端发布必须先于新版 APK 联调。原有一键调试重置及完整本地清理保持不变。
 

@@ -84,11 +84,6 @@ private fun loadWechatAvatar(url: String): Bitmap? {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(nickname, { if (it.codePointCount(0, it.length) <= 64) nickname = it },
                     label = { Text("昵称（最多 64 个字符）") }, singleLine = true, enabled = !busy)
-                Text(if (account.accountType != "member") "微信登录可能切换到已有账号；登录成功后可选择补充该账号缺少的资料。"
-                    else if (!account.wechatBound) "先绑定微信，再预览并选择要替换的资料。" else "重新授权当前绑定微信，预览后选择要替换的资料。")
-                OutlinedButton(enabled = !busy && cn.yixiu.starter.BuildConfig.WECHAT_ENABLED && cn.yixiu.starter.BuildConfig.WECHAT_APP_ID.isNotBlank(), onClick = {
-                    action(UiAction(if (account.accountType == "member") "wechatProfile" else "wechat")); close()
-                }) { Text(if (account.accountType == "member") "使用微信资料" else "前往微信登录") }
                 Text("选择内置头像，不支持上传图片。保留当前选择即可继续使用微信头像。")
                 Protocol.avatars.chunked(3).forEach { row ->
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
@@ -120,7 +115,7 @@ private fun loadWechatAvatar(url: String): Bitmap? {
     AlertDialog(onDismissRequest = { if (!busy) action(UiAction("skipWechatProfile")) },
         title = { Text(if (expired) "微信资料预览已过期" else "选择微信资料") },
         text = { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(if (expired) "登录仍然有效。可在编辑资料中重新授权微信。" else if (preview.overwrite)
+            Text(if (expired) "本次资料选择已结束，登录仍然有效。之后可在编辑资料中修改昵称或选择内置头像。" else if (preview.overwrite)
                 "确认后仅替换勾选的昵称或头像；未勾选的资料保持原样。" else "已登录成功，仅可补充当前账号尚未设置的资料。")
             UserAvatar("", preview.avatarUrl)
             Text(preview.nickname.ifBlank { "微信未提供昵称" })

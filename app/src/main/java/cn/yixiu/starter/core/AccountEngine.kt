@@ -73,7 +73,7 @@ class AccountEngine(private val store: StateStore, private val api: ApiTransport
     }
     suspend fun confirmWechatProfile(useNickname: Boolean, useAvatar: Boolean) = exclusive {
         ready()
-        val preview = validWechatProfile() ?: throw IllegalArgumentException("微信资料预览已失效，请在编辑资料中重新授权")
+        val preview = validWechatProfile() ?: throw IllegalArgumentException("本次微信资料选择已结束，登录仍然有效")
         if (preview.expiresAt <= now()) {
             commit(vault.copy(wechatProfile = null))
             throw ApiFailure(ApiReply(410, "WECHAT_PROFILE_EXPIRED"))
