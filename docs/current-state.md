@@ -2,9 +2,9 @@
 
 更新：2026-10-29（北京时间）。协议见[后端账号 API](https://github.com/yixiu001/hyperf-swow/blob/main/docs/api/android-account.md)。
 
-## 当前工作树：微信登录后资料确认（尚未发布）
+## 当前版本：微信登录后资料确认（配套后端已发布）
 
-本轮在 feat/wechat-profile-confirm 实现，尚未提交、推送或部署。必须先执行后端 SQL004 并发布配套后端，再安装新版 APK 联调；已发布旧后端不具备本轮确认接口。
+Android `daa37e0`、后端 `f105663` 已提交并推送 main。测试库 SQL004 已执行，[Jenkins #22](http://192.168.1.10:8080/job/hyperf-swow-test/22/) 后续更新 SUCCESS，release `b22-f10566362f8b-774bcac5`，已具备新版 APK 联调条件。容器健康、HTTPS 根页面及默认头像正常；新接口拒绝无效凭证。发布核验时原有 8 个用户、2 条身份及相关账号数据摘要不变，服务器 .env 与 Redis 配置不变，没有重置账号。
 
 普通微信登录/绑定只请求可选候选，不自动写资料。先建立最终用户和最终会话，再展示实际微信昵称和头像；自动模式仅允许补充最终账号缺失字段，完整账号不弹窗。每项独立勾选，也可跳过；候选获取失败、格式异常或过期均不影响登录。
 
@@ -20,7 +20,7 @@
 
 执行成功：`:app:testDebugUnitTest :app:assembleDebug :app:lintDebug :app:compileReleaseKotlin --console=plain`，JDK 为 `D:/android-studio/jbr`。lint 0 错误、9 个既有依赖版本提示。APK：`app/build/outputs/apk/debug/app-debug.apk`；SHA256 `be680133503f73a1657f9b9c06417dc6f59bcc9185963b900327e2b9d5538914`。
 
-未运行设备 UI/外部微信/短信或真实接口冒烟；未执行 SQL004、服务部署、设备清理或账号重置。完整本地报告见 [微信资料确认验收](verification-2026-10-29-wechat-profile-confirm.md)。
+真实微信/短信业务流程与真实接口冒烟尚未验收；SQL004 和服务部署已完成，没有执行设备清理或账号重置。发布前四项 Android 检查再次成功。完整报告见 [微信资料确认验收](verification-2026-10-29-wechat-profile-confirm.md)。
 
 ## 已发布基线（历史，与本轮分开）
 
@@ -49,7 +49,7 @@ Redis、后端环境和产品配置未修改。生产签名发布、隐私政策
 
 M1：预览的昵称/头像独立勾选改为 rememberSaveable(previewId)，保留旋转选择，仍须明确确认。此项已编译/lint 验证；未运行设备旋转验收。
 
-修复后完整要求命令 BUILD SUCCESSFUL（13 秒），78 项测试 77 通过 / 1 真实 smoke 跳过；lint 0 错误 / 9 条既有提示，debug APK 与 release Kotlin 均成功。上方 APK hash 为修复后产物。仍未提交/推送/部署/调用真实接口，SQL004 和后端发布仍须先于真机联调。
+该轮历史构建 BUILD SUCCESSFUL（13 秒），78 项测试 77 通过 / 1 真实 smoke 跳过；lint 0 错误 / 9 条既有提示，debug APK 与 release Kotlin 均成功。后续最终结果与当前发布状态见本文上方，不能把该轮数字当作当前总数。
 
 
 ## 最终集成审查修复（当前验收）
