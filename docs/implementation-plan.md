@@ -1,5 +1,7 @@
 # Android Kotlin Implementation Plan
 
+> 历史计划：下方复选框保留原计划形式，不代表当前完成状态，也不是重新执行的指令。实现经过见[实施记录](progress.md)，最新配置、验证结果和待验收事项见[当前状态](current-state.md)。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 可复制的 Kotlin Android 产品基础工程，对接 Hyperf 全部 10 个账号接口。

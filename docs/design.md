@@ -1,5 +1,7 @@
 # Android 通用产品基础工程设计（已确认）
 
+> 历史设计：下文保留 2026-10-27 的方案与授权语境；实现结果、配置开关和后续反馈见[当前状态](current-state.md)。具体网络恢复行为以[接口映射](api-map.md)与实际 AccountEngine 为准，不把设计建议视为全部已交付功能。
+
 2026-10-27：用户批准直接开发，细节由实现者决定；工程改名 android-kotlin，仓库 https://github.com/yixiu001/android-kotlin.git。
 
 ## 目标与范围

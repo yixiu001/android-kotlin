@@ -1,8 +1,10 @@
 # Implementation ledger — 2026-10-27-android-kotlin
 
+> 历史实施流水：各条按发生顺序记录，早期“未配置”已被后续配置接入记录更新。当前完整状态见[当前状态](current-state.md)。
+
 - 用户批准完整方案并授权细节；指定工程 android-kotlin 和 GitHub 仓库，远程无分支。
 - 采用独立新工程，无现有代码/主分支需要隔离；未修改其他项目。
-- 计划：../.. 的 docs/superpowers/plans/2026-10-27-android-kotlin.md。
+- 计划的仓库内副本：[实施计划](implementation-plan.md)；复制或单独克隆仓库时无需依赖仓库外文件。
 - Task 1 → Task 2：WireRequest / ApiTransport 为状态机唯一网络接口。
 - Task 2 → Task 3：AccountEngine 为 UI 唯一会话操作入口。
 - 使用本机缓存可核验的 AGP 9.4.1 / Kotlin 2.2.10 / Compose BOM 2025.08.00；版本固定后以实际构建验证兼容性。

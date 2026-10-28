@@ -2,6 +2,8 @@
 
 可复制的 Android 产品基础工程，Kotlin + Jetpack Compose，对接 [hyperf-swow](https://github.com/yixiu001/hyperf-swow) 单产品账号体系。
 
+当前配置、配套后端、验证结果和待处理问题统一见[当前状态](docs/current-state.md)；按[文档导航](docs/README.md)查阅接入、复制和历史记录。新产品模板默认值与已部署测试环境的实际状态分开记录。
+
 内置中文首页、个人中心、自动游客、手机验证码登录/绑定、微信授权登录/绑定、会话刷新和当前设备退出。新产品在此基础上扩展业务页面。开发工具只存在于 debug 版本。
 
 ## 快速开始
@@ -32,7 +34,7 @@ Windows 构建命令（按本机实际路径设置 JAVA_HOME）：
 | WECHAT_ENABLED | 客户端微信开关，需平台和服务端配置匹配 |
 | VERSION_CODE / VERSION_NAME | 安装升级版本号与显示版本，版本字符串最多 32 字节 |
 
-第一次复制请完成 [新产品配置清单](docs/new-product-checklist.md)。测试服务端已通过 Jenkins #19 加载短信和微信配置，客户端已同步 AppID 与用户登记的包名 cn.fuyaoshouhu.app。微信挑战接口已通过验证，真实短信发送及微信真机授权仍待验收。参见 [供应商接入](docs/providers.md)。
+第一次复制请完成 [新产品配置清单](docs/new-product-checklist.md)。当前客户端使用包名 cn.fuyaoshouhu.app、测试后端及公开微信 AppID；这是现有联调配置，复制时必须改为新产品自己的配置。测试服务端已加载短信和微信配置，但配置已加载不等于真实登录成功：短信尚无验收完成记录，微信真机曾返回 10005，原因及修复结果尚待平台核验。参见 [供应商接入](docs/providers.md)。
 
 ## 账号行为
 

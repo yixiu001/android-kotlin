@@ -1,6 +1,6 @@
 # 接口映射
 
-前缀 /api/v1，健康检查为根 /。权威协议是 hyperf-swow/docs/api/android-account.md。
+前缀 /api/v1，健康检查为根 /。权威协议是[后端账号 API](https://github.com/yixiu001/hyperf-swow/blob/main/docs/api/android-account.md)。`product.properties` 的 `API_BASE_URL` 只填 HTTPS origin（如 `https://hyperf.tongyiwl.bond`），前缀由 `ApiClient` 添加；配置里带 `/api/v1` 会被 `Protocol.origin` 拒绝。当前验收边界见[当前状态](current-state.md)。
 
 | 方法和路径 | AccountEngine | 用户入口 |
 | --- | --- | --- |

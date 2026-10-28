@@ -10,6 +10,8 @@
 
 namespace 可以保持 cn.yixiu.starter，安装身份由 APPLICATION_ID 区分，无需全局替换 Kotlin 包名。微信回调的 Manifest 别名随 applicationId 自动变化。
 
+API_BASE_URL 只填 HTTPS origin，例如 `https://fysh-api.tongyiwl.bond`，不带 `/api/v1`。当前只有一套产品配置，未实现 test/prod 变体；debug/release 不会自动选择不同后端或微信 AppID。模板当前保留现有联调产品的配置，不能直接作为新产品发布。
+
 ## 后端与身份
 
 - 后端也复制独立工程：独立 MySQL 库、账号加密/HMAC 密钥、Redis 前缀和最小 ACL。Android 不保存这些值。
