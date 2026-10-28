@@ -14,18 +14,21 @@ class WechatCallbackActivity : Activity(), IWXAPIEventHandler {
     private var api: IWXAPI? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (!BuildConfig.WECHAT_ENABLED || BuildConfig.WECHAT_APP_ID.isBlank()) { finish(); return }
+        if (!(application as StarterApplication).preferences.hasConsent() ||
+            !BuildConfig.WECHAT_ENABLED || BuildConfig.WECHAT_APP_ID.isBlank()) { finish(); return }
         api = WXAPIFactory.createWXAPI(this, BuildConfig.WECHAT_APP_ID, true).apply { setLogImpl(SilentWechatLog) }
         handle(intent)
     }
     override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); setIntent(intent); handle(intent) }
     private fun handle(intent: Intent) {
+        if (!(application as StarterApplication).preferences.hasConsent()) { finish(); return }
         try { if (api?.handleIntent(intent, this) != true) finish() } catch (_: Exception) { finish() }
     }
     override fun onReq(request: BaseReq?) { finish() }
     override fun onResp(response: BaseResp?) {
         val app = application as StarterApplication
-        if (response !is SendAuth.Resp) { finish(); return }
+        if (response !is SendAuth.Resp || !app.preferences.hasConsent() || app.callbackBusy.value) { finish(); return }
+        app.callbackBusy.value = true
         app.scope.launch {
             try {
                 if (response.errCode == BaseResp.ErrCode.ERR_OK) {
@@ -38,6 +41,7 @@ class WechatCallbackActivity : Activity(), IWXAPIEventHandler {
                     app.notice.value = if (response.errCode == BaseResp.ErrCode.ERR_USER_CANCEL) "已取消微信授权" else "微信授权未完成，请重试"
                 }
             } catch (error: Exception) { app.notice.value = friendlyError(error) }
+            finally { app.callbackBusy.value = false }
         }
         startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP))
         finish()

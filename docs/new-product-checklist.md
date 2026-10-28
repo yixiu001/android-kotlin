@@ -3,16 +3,24 @@
 ## 必改项
 
 1. 复制源码到独立目录，不复制 .git、.gradle、.idea、build、local.properties、签名文件或日志。创建自己的 Git 仓库。
-2. 修改 product.properties 中名称、APPLICATION_ID、API_BASE_URL、微信 AppID/开关、版本号、短信入口开关。
+2. 修改 product.properties 中名称、APPLICATION_ID 和版本号；在 environments/test.properties 配置测试 API、微信 AppID、短信/微信开关。复制 production.properties.example 为不入库的 production.properties，单独填写正式值。
    联调需要时仅在 debug 开启 `TEST_TOOLS_ENABLED`；本项目已开 true，缺项回退 false；新产品默认关闭，release 强制 false，不把重置授权码加入配置文件。
 3. 修改 settings.gradle.kts 的 rootProject.name，调整工程展示名称。
-4. 替换 app/src/main/res/drawable/ic_launcher.xml 图标、ui/StarterScreen.kt 品牌色及首页业务区域；正式产品建议配 adaptive icon。
+4. 替换 app/src/main/res/drawable/ic_launcher.xml 图标、ui/Theme.kt 品牌色及 ui/LocalToolScreen.kt / StarterScreen.kt 首页业务区域；正式产品建议配 adaptive icon。
 5. 配置本机 SDK/JDK 后重新 Sync。
-6. 按[个人中心说明](profile-center.md)填写 `FEEDBACK_URL`、`PRIVACY_POLICY_URL`、`TERMS_URL` 的产品公开 HTTPS 地址；模板空值仅显示未配置提示，正式发布前补齐隐私与协议。
+6. 在对应环境配置中按[个人中心说明](profile-center.md)填写 `FEEDBACK_URL`、`PRIVACY_POLICY_URL`、`TERMS_URL` 的产品公开 HTTPS 地址；测试空值显示未配置提示；正式发布还需真实主体、支持邮箱、备案适用性、非 debug 签名，并通过[发布检查](build-environments.md)。
 
 namespace 可以保持 cn.yixiu.starter，安装身份由 APPLICATION_ID 区分，无需全局替换 Kotlin 包名。微信回调的 Manifest 别名随 applicationId 自动变化。
 
-API_BASE_URL 只填 HTTPS origin，例如 `https://fysh-api.tongyiwl.bond`，不带 `/api/v1`。当前只有一套产品配置，未实现 test/prod 变体；debug/release 不会自动选择不同后端或微信 AppID。模板当前保留现有联调产品的配置，不能直接作为新产品发布。
+API_BASE_URL 只填 HTTPS origin，例如 `https://fysh-api.tongyiwl.bond`，不带 `/api/v1`。debug/release 自动读取独立测试/正式环境文件，不额外增加 flavor；正式配置绝不回退读取测试值。模板当前保留现有联调产品的配置，不能直接作为新产品发布。
+
+## 启动、隐私与设置
+
+- 编写与实际数据处理、权限、SDK 一致的政策及本地说明；隐私版本变化后重新确认，正式 PRIVACY_VERSION 使用 production- 前缀。不要把测试说明作为正式政策。
+- 首装和旧版缺同意记录时，确认前不初始化账号或微信 SDK；拒绝仅使用本地工具。验证覆盖升级保留原 Vault，而不是假定旧用户已同意。
+- 撤回暂停账号服务并保留凭证；有进行中或待确认操作先恢复。退出、注销仍是独立账号操作。
+- 引导默认关闭，需要时开启 ONBOARDING_ENABLED 并维护 ONBOARDING_VERSION；完成和跳过均记录版本，不用引导开关绕过隐私。
+- 验证主题系统跟随/浅色/深色、设置持久化与系统栏。普通缓存仅写入并清理 cacheDir/tool-temp，不能将用户文件或凭证放在这里。
 
 ## 后端与身份
 
@@ -33,7 +41,8 @@ API_BASE_URL 只填 HTTPS origin，例如 `https://fysh-api.tongyiwl.bond`，不
 
 ## 业务扩展
 
-- 从首页扩展业务页面；通过 Repository 协调网络与缓存，页面不管理令牌。
+- 本地文本计数仅是可运行示例；替换为真实首页和本地模式功能，再设置 DEMO_ENABLED=false、RELEASE_CONTENT_READY=true。只关闭示例会显示未配置提示，不能通过人工确认冒充业务完成。
+- 保留启动门禁，纯本地功能不读取账号、不联网；网络业务通过原账号层协调，页面不管理令牌。
 - 新增并发请求捕获 generation/tokenVersion，账号切换后丢弃旧响应。
 - 业务私有缓存按账号分目录，接入 onAccountCleared，退出/升级/合并/注销时清理；新增业务表同时实现后端注销清理。
 - 后端业务数据合并需要注册业务合并器，基础账号模块不会自动合并任意业务表。
@@ -41,9 +50,9 @@ API_BASE_URL 只填 HTTPS origin，例如 `https://fysh-api.tongyiwl.bond`，不
 
 ## 验收
 
-- 首次游客、重启恢复、短信及微信登录/绑定、游客合并、正式账号冲突、退出后新游客。
+- 首次/升级隐私确认、拒绝与重新同意、政策版本变化、可选引导跳过/完成、撤回边界；同意后游客、重启恢复、短信及微信登录/绑定、游客合并、正式账号冲突、退出后新游客。
 - 多设备独立会话，退出一台不影响其他设备。
 - 断网/响应丢失/原请求恢复/并发刷新/验证码过期/429/503。
 - 微信真机验证包名签名、取消、未安装微信、AppID 不匹配、进程重建回调；登录最终账号后预览缺失字段/完整账号不弹窗、独立选择/跳过重启、编辑页无微信授权入口、过期、未知确认原请求恢复。
-- release 无开发工具，后端为新产品域名，签名属于新产品，不包含服务端密钥。
-- 单元测试、lint、release 编译和设备仪器测试通过。
+- release 无开发工具；缺正式环境、政策、主体、签名、真实业务确认时自动阻止打包。正式后端属于新产品，APK 不包含服务端密钥。
+- 单元测试、lint、release 结构编译与限定设备仪器测试通过；正式产物另需 verifyReleaseReady 和人工内容审查。覆盖安装前后核对首次安装时间及加密 Vault 摘要，不执行清数据。

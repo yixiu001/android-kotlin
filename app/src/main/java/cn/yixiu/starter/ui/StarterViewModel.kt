@@ -11,7 +11,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 
 class StarterViewModel(application: Application) : AndroidViewModel(application) {
     private val app = application as StarterApplication
-    private val result = runCatching { app.engine }
+    private val result = runCatching {
+        check(app.preferences.hasConsent()) { "请先阅读并同意隐私说明" }
+        app.engine
+    }
     val engine = result.getOrNull()
     val account = engine?.state ?: MutableStateFlow(AccountView(BuildConfig.API_BASE_URL, privateHidden = true))
     val busy = MutableStateFlow(false)
@@ -22,10 +25,11 @@ class StarterViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch { app.notice.collect { if (it.isNotEmpty()) { message.value = it; app.notice.value = "" } } }
     }
     fun launchTestTool(block: suspend CoroutineScope.() -> Unit): Job {
-        check(BuildConfig.DEBUG && BuildConfig.TEST_TOOLS_ENABLED)
+        check(BuildConfig.DEBUG && BuildConfig.TEST_TOOLS_ENABLED && app.preferences.hasConsent())
         return viewModelScope.launch(block = block)
     }
     fun dispatch(action: UiAction) {
+        if (!app.preferences.hasConsent()) return
         val engine = engine ?: return
         when (action.name) {
             "start" -> run("已连接") { engine.start() }
@@ -69,7 +73,7 @@ class StarterViewModel(application: Application) : AndroidViewModel(application)
         }
     }
     private fun run(success: String, block: suspend () -> Unit) {
-        if (busy.value) return
+        if (busy.value || !app.preferences.hasConsent()) return
         busy.value = true; message.value = ""
         viewModelScope.launch {
             try { block(); message.value = success }

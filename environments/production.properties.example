@@ -1,0 +1,25 @@
+# 复制为 production.properties（已 gitignore），全部填写真正审核过的产品信息。
+# 空值故意阻止正式打包；不包含任何虚构域名、运营主体或备案。
+API_BASE_URL=
+WECHAT_APP_ID=
+SMS_ENABLED=false
+WECHAT_ENABLED=false
+TEST_TOOLS_ENABLED=false
+# 明确替换/关闭业务示例后改为 false，并检查成品内容。
+DEMO_ENABLED=true
+# 在真实首页/业务内容、政策、SDK 和权限披露经人工验证后显式设为 true。
+RELEASE_CONTENT_READY=false
+# 必须以 production- 开头；每次政策内容变化递增，不能复用 test 同意记录。
+PRIVACY_VERSION=
+ONBOARDING_ENABLED=false
+ONBOARDING_VERSION=1
+SUPPORT_EMAIL=
+OPERATOR_NAME=
+APP_RECORD_NUMBER=
+# 必填 true/false；不适用时填写具体原因，适用时填写真实备案号。
+APP_RECORD_REQUIRED=
+APP_RECORD_EXEMPTION_REASON=
+APP_MARKET_URL=
+FEEDBACK_URL=
+PRIVACY_POLICY_URL=
+TERMS_URL=

@@ -7,10 +7,13 @@ import cn.yixiu.starter.storage.EncryptedStateStore
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import java.io.File
+import cn.yixiu.starter.settings.AppPreferences
 
 class StarterApplication : Application() {
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     val notice = MutableStateFlow("")
+    val preferences by lazy { AppPreferences(this) }
+    val callbackBusy = MutableStateFlow(false)
     val api by lazy { ApiClient(BuildConfig.DEBUG) }
     val engine by lazy {
         AccountEngine(EncryptedStateStore(this), api, BuildConfig.API_BASE_URL,

@@ -27,10 +27,10 @@ internal enum class ProfilePage(val title: String) {
     Help("帮助与反馈"), Privacy("隐私与协议"), About("关于应用")
 }
 
-private val Muted = Color(0xFF7B8791)
-private val Accent = Color(0xFF16756A)
+private val Muted: Color @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
+private val Accent: Color @Composable get() = MaterialTheme.colorScheme.primary
 
-/** 只负责页面导航和公开内容；账号变更仍由 StarterScreen/AccountEngine 处理。 */
+/** 只负责页面导航和公开内容；账号变更仍由 ui/account 与 AccountEngine 处理。 */
 @Composable internal fun ProfileOverview(account: AccountView, enabled: Boolean,
                                         open: (ProfilePage) -> Unit, edit: () -> Unit) {
     if (!account.privateHidden) {
@@ -46,7 +46,7 @@ private val Accent = Color(0xFF16756A)
                     Text(account.nickname.ifBlank { if (member) "我的账号" else "登录 / 注册" },
                         Modifier.weight(1f, fill = false), fontSize = 22.sp, fontWeight = FontWeight.SemiBold,
                         maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    if (member) Surface(color = Color(0xFFE4F4ED), shape = RoundedCornerShape(12.dp)) {
+                    if (member) Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = RoundedCornerShape(12.dp)) {
                         Text(if (account.wechatBound) "微信已绑定" else "手机已绑定",
                             Modifier.padding(horizontal = 8.dp, vertical = 4.dp), color = Accent, fontSize = 11.sp,
                             maxLines = 1)
@@ -76,7 +76,7 @@ private val Accent = Color(0xFF16756A)
 @Composable private fun ProfileGroup(title: String, content: @Composable ColumnScope.() -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(title, color = Muted, fontSize = 14.sp, modifier = Modifier.padding(top = 8.dp))
-        Surface(color = Color.White, shape = RoundedCornerShape(18.dp)) {
+        Surface(color = MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(18.dp)) {
             Column(Modifier.fillMaxWidth(), content = content)
         }
     }
@@ -95,7 +95,7 @@ private val Accent = Color(0xFF16756A)
 }
 
 @Composable private fun ProfileDivider() {
-    HorizontalDivider(Modifier.padding(horizontal = 18.dp), color = Color(0xFFEDF0F2))
+    HorizontalDivider(Modifier.padding(horizontal = 18.dp), color = MaterialTheme.colorScheme.outlineVariant)
 }
 
 @Composable internal fun ProfileHelp() {

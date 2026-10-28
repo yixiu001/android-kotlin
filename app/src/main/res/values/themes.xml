@@ -5,5 +5,11 @@
         <item name="android:statusBarColor">#F5F7F4</item>
         <item name="android:navigationBarColor">#FFFFFF</item>
         <item name="android:colorAccent">#16756A</item>
+        <item name="android:windowBackground">@color/start_background</item>
+    </style>
+    <style name="Theme.Starter.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/start_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher</item>
+        <item name="postSplashScreenTheme">@style/Theme.Starter</item>
     </style>
 </resources>

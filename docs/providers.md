@@ -6,7 +6,7 @@
 
 已验证游客创建、微信挑战（AppID/scope 匹配）与退出接口。此检查不调用供应商授权交换、不发送短信，因此不能代替真实短信权限/模板或微信真机授权验收。
 
-用户在 2026-10-29 明确反馈此前账号阶段测试通过，历史 10005 不再列为当前阻塞。当前 scope 为 `snsapi_userinfo`；本轮登录后微信资料预览需单独真机验证。普通授权请求候选资料，userinfo 获取失败仍完成登录；确认候选无需再调用供应商。资料选择仅属于微信登录/绑定后的收尾步骤，不提供编辑页重新授权入口；头像保留微信链接，不下载到服务器，也不接入 OSS。
+用户在 2026-10-29 明确反馈此前账号阶段测试通过，历史 10005 不再列为当前阻塞。当前 scope 为 `snsapi_userinfo`；登录后微信资料预览仍需单独真机验证。普通授权请求候选资料，userinfo 获取失败仍完成登录；确认候选无需再调用供应商。资料选择仅属于微信登录/绑定后的收尾步骤，不提供编辑页重新授权入口；头像保留微信链接，不下载到服务器，也不接入 OSS。
 
 ## 需要的非敏感信息
 
@@ -34,9 +34,11 @@ AppSecret 和 AccessKey Secret 不发聊天，不写 Android 工程。
 
 ## 客户端微信
 
-product.properties 设置对应 WECHAT_APP_ID、APPLICATION_ID 和 WECHAT_ENABLED=true。运行 gradlew.bat :app:signingReport 核对实际签名 MD5，按开放平台格式去掉冒号、转小写。
+product.properties 设置 APPLICATION_ID；debug 在 environments/test.properties、release 在独立 production.properties 设置对应 WECHAT_APP_ID 与 WECHAT_ENABLED。运行 gradlew.bat :app:signingReport 核对实际签名 MD5，按开放平台格式去掉冒号、转小写。
 
-当前未实现 test/prod 产品变体，debug 与 release 共用 product.properties 的包名、AppID 和接口地址，签名可不同。测试/生产分离仅是讨论过的后续方案，不是现有能力；实际 APK 身份必须与对应平台登记匹配。后台返回 challenge 的 AppID 必须与客户端一致；SDK 回调校验 state 和有效期后才交换一次性 code，取消不提交登录。
+当前不增加 flavor：debug/release 按构建类型分别读取测试/正式配置，正式配置不会回退测试值；包名仍来自共同产品身份，签名需与实际安装包一致。原 debug 包名、AppID 和签名不变；正式发布检查要求独立正式 API、配置与非 debug 签名。实际 APK 身份必须与对应平台登记匹配。后台返回 challenge 的 AppID 必须与客户端一致；SDK 回调校验 state 和有效期后才交换一次性 code，取消不提交登录。
+
+隐私同意是客户端启动前提：首次安装、旧版缺记录或政策版本变化时先确认，未同意/已撤回时不初始化账号服务或微信 SDK，不消费微信授权回调。重新同意后才继续原账号流程。不要为了供应商联调绕过此门禁；新增 SDK 或权限应同步产品隐私说明。
 
 ## 联调
 
@@ -45,3 +47,5 @@ product.properties 设置对应 WECHAT_APP_ID、APPLICATION_ID 和 WECHAT_ENABLE
 真实短信可能计费，需要受控测试手机号和收到的验证码，自动测试不会发送。微信需要安装微信的真机及已审核移动应用权限。
 
 测试库 SQL004 已执行，配套后端 `f105663` 已经 Jenkins #22 成功发布，Android 发布基线 `daa37e0` 已推送 main。后续客户端移除独立微信资料授权入口；新版 APK 仍需真实微信验证：登录最终老账号的缺失/完整资料、独立勾选、跳过及重启、不同微信绑定拒绝、过期及断网恢复。没有修改 Redis 配置或重置现有账号。
+
+本轮轻量基础工程只修改客户端启动、界面和配置装配，未更改供应商服务器配置、未部署后端、未推送代码；当前检查见[基础工程验收](verification-2026-10-29-toolkit-foundation.md)。
