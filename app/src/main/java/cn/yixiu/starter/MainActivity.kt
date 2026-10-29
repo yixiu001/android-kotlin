@@ -34,7 +34,7 @@ class MainActivity : ComponentActivity() {
             val settings by app.preferences.state.collectAsStateWithLifecycle()
             val owner: AccountScope = viewModel()
             var error by remember { mutableStateOf("") }
-            fun save(block: () -> Unit) { runCatching(block).onFailure { error = it.message ?: "设置未保存，请稍后重试" } }
+            fun save(block: () -> Unit) { runCatching(block).onFailure { error = it.message ?: getString(R.string.settings_save_error) } }
             val dark = settings.theme == "dark" || (settings.theme == "system" && isSystemInDarkTheme())
             SideEffect {
                 val style = if (dark) SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
@@ -56,15 +56,17 @@ class MainActivity : ComponentActivity() {
                     val accountError by vm.accountError.collectAsStateWithLifecycle()
                     val activeAction by vm.activeAction.collectAsStateWithLifecycle()
                     val phoneError by vm.phoneError.collectAsStateWithLifecycle()
+                    val profileSave by vm.profileSave.collectAsStateWithLifecycle()
                     StarterScreen(account, busy || callbackBusy, message, vm::dispatch, settings = general,
                         accountError = accountError, activeAction = activeAction,
                         phoneError = phoneError,
+                        profileSave = profileSave,
                         consumeMessage = { vm.consumeMessage(message) },
                         privacy = { PrivacyContent(true,
                             StartupPolicy.canWithdraw(busy, account.pendingPath, callbackBusy)) {
                             save {
                                 check(StartupPolicy.canWithdraw(vm.busy.value, vm.account.value.pendingPath, app.callbackBusy.value)) {
-                                    "请先完成账号操作或恢复待确认请求"
+                                    getString(R.string.privacy_wait_operation)
                                 }
                                 app.preferences.decline()
                                 owner.viewModelStore.clear()

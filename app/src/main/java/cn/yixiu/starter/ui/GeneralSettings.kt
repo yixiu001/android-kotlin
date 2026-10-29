@@ -1,10 +1,13 @@
 package cn.yixiu.starter.ui
 
+import cn.yixiu.starter.R
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import cn.yixiu.starter.BuildConfig
@@ -14,6 +17,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable fun GeneralSettings(theme: String, onTheme: (String) -> Unit) {
+    val copy = LocalResources.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var cacheSize by remember { mutableStateOf<Long?>(null) }
@@ -23,11 +27,11 @@ import kotlinx.coroutines.withContext
     ResultToast(message) { message = "" }
     LaunchedEffect(Unit) {
         runCatching { withContext(Dispatchers.IO) { ToolCache.size(context.cacheDir) } }
-            .onSuccess { cacheSize = it }.onFailure { message = "临时缓存大小暂不可用" }
+            .onSuccess { cacheSize = it }.onFailure { message = copy.getString(R.string.cache_size_error) }
     }
     InfoCard {
-        Text("外观", style = MaterialTheme.typography.titleMedium)
-        listOf("system" to "跟随系统", "light" to "浅色", "dark" to "深色").forEach { (value, label) ->
+        Text(copy.getString(R.string.appearance), style = MaterialTheme.typography.titleMedium)
+        listOf("system" to copy.getString(R.string.theme_system), "light" to copy.getString(R.string.theme_light), "dark" to copy.getString(R.string.theme_dark)).forEach { (value, label) ->
             Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                 RadioButton(selected = theme == value, onClick = { onTheme(value) })
                 TextButton(onClick = { onTheme(value) }) { Text(label) }
@@ -35,30 +39,30 @@ import kotlinx.coroutines.withContext
         }
     }
     InfoCard {
-        Text("临时缓存", style = MaterialTheme.typography.titleMedium)
-        Text(cacheSize?.let { "工具临时文件：${it / 1024} KB" } ?: "正在计算…")
-        Text("仅清理工具临时文件，不影响账号凭证、个人资料、主题设置和用户保存的文件。")
-        OutlinedButton(enabled = !clearing && cacheSize != null, onClick = { confirmClear = true }) { Text("清理临时缓存") }
+        Text(copy.getString(R.string.cache_title), style = MaterialTheme.typography.titleMedium)
+        Text(cacheSize?.let { copy.getString(R.string.cache_size, it / 1024) } ?: copy.getString(R.string.calculating))
+        Text(copy.getString(R.string.cache_help))
+        OutlinedButton(enabled = !clearing && cacheSize != null, onClick = { confirmClear = true }) { Text(copy.getString(R.string.cache_clear)) }
     }
     InfoCard {
-        Text("支持与版本", style = MaterialTheme.typography.titleMedium)
-        Text("版本 ${BuildConfig.VERSION_NAME}")
-        if (BuildConfig.DEBUG) Text("测试版本 · 不用于正式发布", style = MaterialTheme.typography.bodySmall)
+        Text(copy.getString(R.string.support_version), style = MaterialTheme.typography.titleMedium)
+        Text(copy.getString(R.string.version_label, BuildConfig.VERSION_NAME))
+        if (BuildConfig.DEBUG) Text(copy.getString(R.string.debug_version), style = MaterialTheme.typography.bodySmall)
         SupportEntry()
-        DocumentButton("查看应用市场版本", BuildConfig.APP_MARKET_URL)
+        DocumentButton(copy.getString(R.string.market_version), BuildConfig.APP_MARKET_URL)
         if (BuildConfig.APP_RECORD_NUMBER.isNotBlank()) Text(BuildConfig.APP_RECORD_NUMBER, style = MaterialTheme.typography.bodySmall)
     }
-    if (confirmClear) AlertDialog(onDismissRequest = { confirmClear = false }, title = { Text("清理工具临时文件？") },
-        text = { Text("不会退出账号，也不会清除现有账号数据。") },
+    if (confirmClear) AppDialog(onDismissRequest = { confirmClear = false }, title = { Text(copy.getString(R.string.cache_clear_title)) },
+        text = { Text(copy.getString(R.string.cache_clear_warning)) },
         confirmButton = { TextButton(onClick = {
             confirmClear = false; clearing = true
             scope.launch {
                 try {
                     cacheSize = withContext(Dispatchers.IO) { ToolCache.clear(context.cacheDir); ToolCache.size(context.cacheDir) }
-                    message = "临时缓存已清理"
-                } catch (_: Exception) { message = "清理未完成，请稍后重试" }
+                    message = copy.getString(R.string.cache_cleared)
+                } catch (_: Exception) { message = copy.getString(R.string.cache_clear_error) }
                 finally { clearing = false }
             }
-        }) { Text("确认清理") } },
-        dismissButton = { TextButton(onClick = { confirmClear = false }) { Text("取消") } })
+        }) { Text(copy.getString(R.string.cache_clear_confirm)) } },
+        dismissButton = { TextButton(onClick = { confirmClear = false }) { Text(copy.getString(R.string.cancel)) } })
 }

@@ -1,5 +1,10 @@
 package cn.yixiu.starter.ui
 
+import cn.yixiu.starter.R
+
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.platform.LocalContext
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -20,9 +25,10 @@ import androidx.compose.ui.text.font.FontWeight
     }
 }
 
-@Composable fun ErrorState(message: String, retryLabel: String = "重试", retry: (() -> Unit)? = null) {
+@Composable fun ErrorState(message: String, retryLabel: String? = null, retry: (() -> Unit)? = null) {
+    val copy = LocalResources.current
     InfoCard {
         Text(message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
-        if (retry != null) OutlinedButton(onClick = retry) { Text(retryLabel) }
+        if (retry != null) OutlinedButton(onClick = retry) { Text(retryLabel ?: copy.getString(R.string.retry)) }
     }
 }

@@ -1,5 +1,7 @@
 package cn.yixiu.starter.ui
 
+import cn.yixiu.starter.R
+
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -10,9 +12,10 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 
 class StarterViewModel(application: Application) : AndroidViewModel(application) {
+    private val copy = application.resources
     private val app = application as StarterApplication
     private val result = runCatching {
-        check(app.preferences.hasConsent()) { "请先阅读并同意隐私说明" }
+        check(app.preferences.hasConsent()) { copy.getString(R.string.consent_required) }
         app.engine
     }
     val engine = result.getOrNull()
@@ -20,8 +23,9 @@ class StarterViewModel(application: Application) : AndroidViewModel(application)
     val busy = MutableStateFlow(false)
     val activeAction = MutableStateFlow("")
     val message = MutableStateFlow("")
-    val accountError = MutableStateFlow(if (engine == null) "本地账号数据暂时无法读取，请保留应用数据并联系支持。" else "")
+    val accountError = MutableStateFlow(if (engine == null) copy.getString(R.string.vault_unreadable) else "")
     val phoneError = MutableStateFlow("")
+    val profileSave = MutableStateFlow(ProfileSaveFeedback())
     val logs = app.api.logs
     init {
         if (engine != null) run("", "start", quiet = true) { engine.start() }
@@ -37,92 +41,115 @@ class StarterViewModel(application: Application) : AndroidViewModel(application)
         if (busy.value) return
         activeAction.value = action.name
         when (action.name) {
-            "start" -> run("已连接") { engine.start() }
-            "me" -> run("账号信息已更新") { engine.me() }
-            "refresh" -> run("登录状态已更新") { engine.refresh() }
-            "recover" -> run("上次操作已确认") { engine.recover() }
-            "abandonChallenge" -> run("已放弃上次验证，请在倒计时结束后重试") { engine.abandonChallenge() }
-            "logout" -> run("已退出，正在使用新游客账号") { engine.logout() }
-            "profile" -> run("资料已更新") {
+            "start" -> run(copy.getString(R.string.connected)) { engine.start() }
+            "me" -> run(copy.getString(R.string.account_refreshed)) { engine.me() }
+            "refresh" -> run(copy.getString(R.string.session_refreshed)) { engine.refresh() }
+            "recover" -> run(copy.getString(R.string.operation_recovered)) { engine.recover() }
+            "recoverProfile" -> {
+                if (account.value.pendingPath !in setOf("/me/profile", "/auth/refresh")) return
+                val before = account.value
+                run(copy.getString(R.string.profile_updated)) {
+                    engine.recover()
+                    // 保存状态快照可能早于后台失败；普通 refresh 成功不能证明资料已写入。
+                    check(profileTargetMatches(action.value, before, account.value)) {
+                        copy.getString(R.string.profile_save_not_applied)
+                    }
+                }
+            }
+            "abandonChallenge" -> run(copy.getString(R.string.challenge_abandoned)) { engine.abandonChallenge() }
+            "logout" -> run(copy.getString(R.string.logged_out)) { engine.logout() }
+            "profile" -> run(copy.getString(R.string.profile_updated)) {
                 val input = com.google.gson.JsonParser.parseString(action.value).asJsonObject
                 engine.updateProfile(input.get("nickname")?.asString, input.get("avatar")?.asString)
             }
-            "sms", "deleteSms" -> run("验证码已发送，请查看手机短信") {
-                check(BuildConfig.SMS_ENABLED) { "本产品暂未开放短信登录" }
+            "sms", "deleteSms" -> run(copy.getString(R.string.sms_sent)) {
+                check(BuildConfig.SMS_ENABLED) { copy.getString(R.string.sms_disabled) }
                 val phone = action.value.trim().let { if (it.startsWith("+86")) it else "+86" + it }
                 engine.requestSms(phone, deletion = action.name == "deleteSms")
             }
             "phone" -> run("") {
                 val deleted = engine.submitPhone(action.value.trim()); engine.me()
-                app.notice.value = if (deleted) "账号已注销，当前为新游客；原手机号和微信 30 天内不能注册或绑定。" else "身份验证成功"
+                app.notice.value = if (deleted) copy.getString(R.string.account_deleted) else copy.getString(R.string.identity_verified)
             }
-            "skipWechatProfile" -> run("已跳过，登录成功") { engine.skipWechatProfile() }
-            "confirmWechatProfile" -> run("微信资料已更新") {
+            "skipWechatProfile" -> run(copy.getString(R.string.wechat_profile_skipped)) { engine.skipWechatProfile() }
+            "confirmWechatProfile" -> run(copy.getString(R.string.wechat_profile_updated)) {
                 val input = com.google.gson.JsonParser.parseString(action.value).asJsonObject
                 engine.confirmWechatProfile(input["use_nickname"].asBoolean, input["use_avatar"].asBoolean)
             }
             "wechat", "deleteWechat" -> run("") {
-                check(BuildConfig.WECHAT_ENABLED && BuildConfig.WECHAT_APP_ID.isNotBlank()) { "微信登录待配置移动应用 AppID" }
+                check(BuildConfig.WECHAT_ENABLED && BuildConfig.WECHAT_APP_ID.isNotBlank()) { copy.getString(R.string.wechat_appid_missing) }
                 val bridge = WechatBridge(app)
                 bridge.checkAvailable()
                 val challenge = engine.requestWechat(deletion = action.name == "deleteWechat")
                 try { bridge.launch(challenge) } catch (error: Exception) { engine.cancelWechat(); throw error }
             }
-            "health" -> run("服务器健康检查通过") { engine.health() }
-            "environment" -> run("已连接新的测试环境") {
+            "health" -> run(copy.getString(R.string.health_passed)) { engine.health() }
+            "environment" -> run(copy.getString(R.string.environment_changed)) {
                 val origin = Protocol.origin(action.value)
                 app.api.clearLogs()
                 engine.switchOrigin(origin, true)
             }
-            "restartInvalid" -> run("已建立新游客账号，可重新验证身份") { engine.restartInvalidSession() }
+            "restartInvalid" -> run(copy.getString(R.string.guest_restarted)) { engine.restartInvalidSession() }
         }
     }
     fun consumeMessage(value: String) { if (message.value == value) message.value = "" }
 
     private fun run(success: String, operation: String = activeAction.value, quiet: Boolean = false, block: suspend () -> Unit) {
         if (busy.value || !app.preferences.hasConsent()) return
+        val tracksProfile = operation in setOf("profile", "recoverProfile") ||
+            (operation == "recover" && profileSave.value.status == ProfileSaveStatus.Pending &&
+                profileSave.value.origin == account.value.origin && profileSave.value.userId == account.value.userId)
+        val attempt = if (tracksProfile) ProfileSaveFeedback(profileSave.value.attempt + 1, account.value.origin,
+            account.value.userId, ProfileSaveStatus.Saving) else null
+        attempt?.let { profileSave.value = it }
         busy.value = true; activeAction.value = operation; message.value = ""; accountError.value = ""; phoneError.value = ""
         viewModelScope.launch {
-            try { block(); message.value = success }
+            try {
+                block()
+                attempt?.let { profileSave.value = it.copy(status = ProfileSaveStatus.Saved) }
+                message.value = success
+            }
             catch (cancelled: CancellationException) { throw cancelled }
             catch (error: Exception) {
-                val detail = friendlyError(error)
+                val detail = friendlyError(error, copy)
+                attempt?.let { profileSave.value = it.copy(status = if (account.value.pendingPath != null)
+                    ProfileSaveStatus.Pending else ProfileSaveStatus.Failed, error = detail) }
                 // 后台连接失败只留在账号页，不能打扰本地工具；用户操作结果则提示一次。
                 if (operation in setOf("start", "me", "recover")) accountError.value = detail
                 if (operation == "phone" && error is ApiFailure && error.reply.code == "VERIFICATION_INVALID")
-                    phoneError.value = "验证码无效或已过期，请重新输入或获取"
-                else if (!quiet) message.value = detail
+                    phoneError.value = copy.getString(R.string.code_invalid)
+                else if (!quiet && !tracksProfile) message.value = detail
             }
             finally { busy.value = false; activeAction.value = "" }
         }
     }
 }
 
-fun friendlyError(error: Exception): String = when (error) {
-    is PendingOperation -> "上次操作尚未确认，请到账号与安全继续处理"
+fun friendlyError(error: Exception, copy: android.content.res.Resources): String = when (error) {
+    is PendingOperation -> copy.getString(R.string.pending_operation_error)
     is ApiFailure -> when (error.reply.code) {
-        "AUTH_CONFIGURATION_ERROR" -> "此登录方式暂不可用，请稍后重试或联系支持"
-        "AUTH_PROVIDER_UNAVAILABLE" -> "验证结果暂未确认，请到账号与安全继续处理"
-        "AUTH_STORAGE_UNAVAILABLE" -> "账号服务暂不可用，请稍后重试"
-        "RATE_LIMITED" -> "请求过于频繁，请在 " + error.reply.retryAfter.coerceAtLeast(1) + " 秒后重试。"
-        "IDENTITY_ALREADY_BOUND" -> "此手机号或微信已绑定其他正式账号，无法合并。"
-        "IDENTITY_TYPE_ALREADY_BOUND" -> "当前账号已绑定另一手机号或微信，暂不支持换绑。"
+        "AUTH_CONFIGURATION_ERROR" -> copy.getString(R.string.provider_config_error)
+        "AUTH_PROVIDER_UNAVAILABLE" -> copy.getString(R.string.provider_pending_error)
+        "AUTH_STORAGE_UNAVAILABLE" -> copy.getString(R.string.storage_error)
+        "RATE_LIMITED" -> copy.getString(R.string.rate_limit_prefix) + error.reply.retryAfter.coerceAtLeast(1) + copy.getString(R.string.rate_limit_suffix)
+        "IDENTITY_ALREADY_BOUND" -> copy.getString(R.string.identity_conflict)
+        "IDENTITY_TYPE_ALREADY_BOUND" -> copy.getString(R.string.identity_type_conflict)
         "IDENTITY_REGISTRATION_BLOCKED" -> {
             val until = error.reply.data.get("available_at")?.takeUnless { it.isJsonNull }?.asString
             val display = runCatching { java.time.Instant.parse(until).atZone(java.time.ZoneId.systemDefault()).format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) }.getOrNull()
-            "此身份处于注销后的 30 天限制期，暂不能注册或绑定。" + (display?.let { "可用时间：$it。" } ?: "")
+            copy.getString(R.string.identity_blocked) + (display?.let { copy.getString(R.string.identity_available_at, it) } ?: "")
         }
-        "WECHAT_PROFILE_EXPIRED" -> "本次微信资料选择已过期，登录仍有效。可在编辑资料中修改昵称或选择内置头像。"
-        "WECHAT_PROFILE_INVALID" -> "本次微信资料选择已失效，登录仍有效。"
-        "WECHAT_PROFILE_CHANGED" -> "资料已在其他操作中改变，本次微信资料选择已结束。请更新账号信息查看。"
-        "VERIFICATION_INVALID" -> "验证码或授权无效、过期，请检查或重新获取。"
-        "ACCOUNT_DISABLED" -> "账号已被停用，请联系管理员。"
-        "SESSION_INVALID", "REFRESH_TOKEN_INVALID" -> "登录已失效，请到账号与安全重新登录"
-        "AUTH_RESULT_EXPIRED", "SOURCE_ACCOUNT_CHANGED" -> "原操作结果已无法恢复，请确认账号状态后重新验证身份。"
-        "AUTH_OPERATION_IN_PROGRESS", "VERIFICATION_IN_PROGRESS", "MERGE_RETRYABLE" -> "上次操作仍在处理，请稍后到账号与安全继续确认"
-        else -> "操作暂未完成，请稍后重试或联系支持"
+        "WECHAT_PROFILE_EXPIRED" -> copy.getString(R.string.wechat_profile_expired_error)
+        "WECHAT_PROFILE_INVALID" -> copy.getString(R.string.wechat_profile_invalid_error)
+        "WECHAT_PROFILE_CHANGED" -> copy.getString(R.string.wechat_profile_changed_error)
+        "VERIFICATION_INVALID" -> copy.getString(R.string.verification_invalid)
+        "ACCOUNT_DISABLED" -> copy.getString(R.string.account_disabled)
+        "SESSION_INVALID", "REFRESH_TOKEN_INVALID" -> copy.getString(R.string.session_invalid)
+        "AUTH_RESULT_EXPIRED", "SOURCE_ACCOUNT_CHANGED" -> copy.getString(R.string.auth_result_expired)
+        "AUTH_OPERATION_IN_PROGRESS", "VERIFICATION_IN_PROGRESS", "MERGE_RETRYABLE" -> copy.getString(R.string.operation_pending_error)
+        else -> copy.getString(R.string.operation_unavailable)
     }
-    is java.io.IOException -> "连接未完成，请稍后重试；结果待确认时请到账号与安全处理"
-    is IllegalArgumentException, is IllegalStateException -> error.message ?: "当前操作不可用"
-    else -> "操作未完成，请稍后重试。"
+    is java.io.IOException -> copy.getString(R.string.network_error)
+    is IllegalArgumentException, is IllegalStateException -> error.message ?: copy.getString(R.string.operation_invalid)
+    else -> copy.getString(R.string.operation_failed)
 }

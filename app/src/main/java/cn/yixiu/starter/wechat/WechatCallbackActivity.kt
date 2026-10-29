@@ -1,5 +1,7 @@
 package cn.yixiu.starter.wechat
 
+import cn.yixiu.starter.R
+
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
@@ -34,13 +36,13 @@ class WechatCallbackActivity : Activity(), IWXAPIEventHandler {
                 if (response.errCode == BaseResp.ErrCode.ERR_OK) {
                     val deleted = app.engine.submitWechat(response.state.orEmpty(), response.code.orEmpty())
                     app.engine.me()
-                    app.notice.value = if (deleted) "账号已注销，当前为新游客；原手机号和微信 30 天内不能注册或绑定。" else "微信身份验证成功"
+                    app.notice.value = if (deleted) getString(R.string.account_deleted) else getString(R.string.wechat_verified)
                 } else {
                     // 只清除匹配的授权；旧取消回调不能影响较新的授权。
                     app.engine.cancelWechat(response.state.orEmpty())
-                    app.notice.value = if (response.errCode == BaseResp.ErrCode.ERR_USER_CANCEL) "已取消微信授权" else "微信授权未完成，请重试"
+                    app.notice.value = if (response.errCode == BaseResp.ErrCode.ERR_USER_CANCEL) getString(R.string.wechat_cancelled) else getString(R.string.wechat_incomplete)
                 }
-            } catch (error: Exception) { app.notice.value = friendlyError(error) }
+            } catch (error: Exception) { app.notice.value = friendlyError(error, resources) }
             finally { app.callbackBusy.value = false }
         }
         startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP))

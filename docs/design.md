@@ -14,7 +14,7 @@ StarterScreen 负责导航，ui/account 承接已有账号表单、弹窗和恢�
 
 product.properties 维护应用身份，environments/test.properties 和独立 production.properties 分开提供 API、微信、开关和公开信息。正式产物强制执行 verifyReleaseReady，检查正式环境、主体/政策、签名、示例关闭与人工业务完成声明；结构编译不意味着可以发布。未配置正式材料时明确阻止，不伪造合规信息。
 
-基础工程已推送，证据见[基础工程验收](verification-2026-10-29-toolkit-foundation.md)。后续交互整理在 feature/tool-ui-refinement 开发完成，未改后端与测试配置；当前证据见[交互整理验收](verification-2026-10-29-tool-ui-refinement.md)，配置细节见[构建环境](build-environments.md)。
+基础工程与六项交互整理已推送，历史证据见[交互整理验收](verification-2026-10-29-tool-ui-refinement.md)。本次更新补充资料保存、基础适配与集中文案：UI 层按尝试和账号环境识别保存反馈，成功才关闭；草稿支持保存状态恢复，待确认继续原请求，无关刷新不能结束草稿。`PageColumn` 和 `AppDialog` 共享限宽/滚动能力，默认头像自动换行；保持单模块与系统字号。通用/产品文案分别使用 strings.xml/product_strings.xml，不改协议或持久化值。当前证据见[资料保存与适配验收](verification-2026-10-29-profile-adaptive-copy.md)，配置细节见[构建环境](build-environments.md)。
 
 ## 2026-10-27 原始设计
 

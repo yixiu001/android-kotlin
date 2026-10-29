@@ -1,5 +1,7 @@
 package cn.yixiu.starter.ui
 
+import cn.yixiu.starter.R
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -7,6 +9,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalContext
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -35,28 +38,29 @@ internal fun countText(text: String): TextCounts {
 
 /** Pure local demo, also usable before privacy consent. The host owns scrolling and insets. */
 @Composable fun LocalToolScreen() {
+    val copy = LocalResources.current
     var text by rememberSaveable { mutableStateOf("") }
     var copied by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val counts = remember(text) { countText(text) }
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-        Text("文本计数", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
-        Text("本地工具示例 · 无需登录，也不会上传内容。", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(copy.getString(R.string.product_demo_title), style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+        Text(copy.getString(R.string.product_demo_description), color = MaterialTheme.colorScheme.onSurfaceVariant)
         InfoCard {
             OutlinedTextField(value = text, onValueChange = { text = limitToolText(it); copied = false },
-                label = { Text("输入或粘贴文本") }, modifier = Modifier.fillMaxWidth(),
+                label = { Text(copy.getString(R.string.product_demo_input)) }, modifier = Modifier.fillMaxWidth(),
                 minLines = 5, maxLines = 10)
-            Text("字符 ${counts.characters}  ·  非空白 ${counts.nonWhitespace}  ·  行数 ${counts.lines}",
+            Text(copy.getString(R.string.product_demo_counts, counts.characters, counts.nonWhitespace, counts.lines),
                 style = MaterialTheme.typography.titleMedium)
-            Text("最多输入约 2 万字。字符数包含空格和换行；组合表情可能计为多个字符。", style = MaterialTheme.typography.bodySmall,
+            Text(copy.getString(R.string.product_demo_limit), style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
-            TextButton(onClick = { text = "" }, enabled = text.isNotEmpty()) { Text("清空文本") }
+            TextButton(onClick = { text = "" }, enabled = text.isNotEmpty()) { Text(copy.getString(R.string.product_demo_clear)) }
             OutlinedButton(onClick = {
-                context.getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText("文本统计",
-                    "字符 ${counts.characters} · 非空白 ${counts.nonWhitespace} · 行数 ${counts.lines}"))
+                context.getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText(copy.getString(R.string.product_demo_clip_label),
+                    copy.getString(R.string.product_demo_clip_counts, counts.characters, counts.nonWhitespace, counts.lines)))
                 copied = true
-            }, enabled = text.isNotEmpty()) { Text(if (copied) "已复制统计" else "复制统计结果") }
+            }, enabled = text.isNotEmpty()) { Text(if (copied) copy.getString(R.string.product_demo_copied) else copy.getString(R.string.product_demo_copy)) }
         }
-        if (text.isEmpty()) EmptyState("还没有文本", "输入一段文字，即可查看字符数和行数。")
+        if (text.isEmpty()) EmptyState(copy.getString(R.string.product_demo_empty), copy.getString(R.string.product_demo_empty_help))
     }
 }

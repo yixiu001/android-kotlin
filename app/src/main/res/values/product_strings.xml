@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 新产品需核对的帮助、隐私、引导与占位文案；须与真实能力一致。 -->
+    <string name="product_demo_title">"文本计数"</string>
+    <string name="product_demo_description">"本地工具示例 · 无需登录，也不会上传内容。"</string>
+    <string name="product_demo_input">"输入或粘贴文本"</string>
+    <string name="product_demo_counts">"字符 %1$d  ·  非空白 %2$d  ·  行数 %3$d"</string>
+    <string name="product_demo_limit">"最多输入约 2 万字。字符数包含空格和换行；组合表情可能计为多个字符。"</string>
+    <string name="product_demo_clear">"清空文本"</string>
+    <string name="product_demo_clip_label">"文本统计"</string>
+    <string name="product_demo_clip_counts">"字符 %1$d · 非空白 %2$d · 行数 %3$d"</string>
+    <string name="product_demo_copied">"已复制统计"</string>
+    <string name="product_demo_copy">"复制统计结果"</string>
+    <string name="product_demo_empty">"还没有文本"</string>
+    <string name="product_demo_empty_help">"输入一段文字，即可查看字符数和行数。"</string>
+    <string name="product_privacy_version">"说明版本：%1$s"</string>
+    <string name="product_privacy_debug_title">"测试环境隐私说明"</string>
+    <string name="product_privacy_title">"隐私与个人信息"</string>
+    <string name="product_privacy_debug_intro">"当前为开发联调版本。本地文本工具无需账号；以下说明仅覆盖本基础工程，不替代新产品上线时的完整隐私政策。"</string>
+    <string name="product_privacy_intro">"请阅读本产品隐私政策和用户协议。你可使用无需账号的本地功能，账号功能将在你同意后启用。"</string>
+    <string name="product_privacy_account_data">"同意后，应用会连接账号服务，创建或恢复游客会话。服务端处理随机安装标识、设备型号、应用版本及请求 IP，用于会话管理和安全控制。凭证加密保存在本机。"</string>
+    <string name="product_privacy_identity_data">"仅当你选择手机号登录时发送手机号及验证码；仅当你点击微信登录或绑定时启动微信 SDK，授权结果交给服务端核验。微信头像和昵称可在登录后选择使用或跳过。"</string>
+    <string name="product_privacy_withdraw_help">"拒绝或撤回后暂停账号服务，保留本机凭证，不执行退出、注销或清空。撤回不代表删除服务端数据；注销请在“账号与安全”操作。"</string>
+    <string name="product_operator">"运营主体：%1$s"</string>
+    <string name="product_privacy_contact">"隐私联系：%1$s"</string>
+    <string name="product_sdk_title">"第三方 SDK 与信息使用"</string>
+    <string name="product_wechat_sdk">"微信 OpenSDK · 腾讯 · 用于微信授权登录。仅在主动使用微信相关功能后调用；微信客户端及 SDK 按其说明处理应用标识、授权信息和必要设备信息。"</string>
+    <string name="product_wechat_policy">"微信 SDK 隐私说明"</string>
+    <string name="product_wechat_disabled">"当前配置未启用微信登录。"</string>
+    <string name="product_sms_sdk">"短信通过自有后端调用阿里云短信服务，客户端不集成阿里云短信 SDK。模板未集成广告、推送或统计 SDK。上线前新增 SDK 必须同步此清单。"</string>
+    <string name="product_permissions_title">"权限与数据"</string>
+    <string name="product_permissions_body">"当前模板声明网络权限，不申请通讯录、定位、相机或存储等运行时权限。本地文本计数不会上传输入内容，复制结果仅由你点击触发。"</string>
+    <string name="product_privacy_accepted">"已同意当前隐私说明"</string>
+    <string name="product_privacy_busy">"账号操作正在进行或结果待确认，请先完成恢复，再撤回。"</string>
+    <string name="product_privacy_withdraw_warning">"保留现有账号数据和凭证，停止后续账号请求。你仍可使用本地功能，之后可以重新同意并继续。"</string>
+    <string name="product_home_unconfigured">"首页功能尚未配置"</string>
+    <string name="product_home_unconfigured_help">"请接入产品业务首页后再发布正式版本。"</string>
+    <string name="product_help_title">"常见问题"</string>
+    <string name="product_help_recover_question">"如何找回账号？"</string>
+    <string name="product_help_recover_answer">"在“账号与安全”中使用已绑定的手机号或微信登录，即可进入同一个账号。未绑定身份的游客无法跨设备找回。"</string>
+    <string name="product_help_binding_question">"可以更换手机号或微信吗？"</string>
+    <string name="product_help_binding_answer">"绑定后不支持更换或解绑。一个账号可以同时绑定手机号和微信。"</string>
+    <string name="product_help_profile_question">"如何修改头像和昵称？"</string>
+    <string name="product_help_profile_answer">"点击个人中心顶部资料区。昵称可以修改，头像可从内置项选择；微信资料只在微信登录或绑定成功后提供一次可跳过的选择。"</string>
+    <string name="product_help_logout_question">"退出和注销有什么区别？"</string>
+    <string name="product_help_logout_answer">"退出只影响当前设备；注销需要验证已绑定身份，立即生效，原手机号和微信 30 天内不能再次注册或绑定。"</string>
+    <string name="product_policy_missing">"暂未提供隐私政策，请在正式使用前确认产品说明。"</string>
+    <string name="product_terms_missing">"暂未提供用户协议。"</string>
+    <string name="product_onboarding_title">"准备好了，从一个小工具开始"</string>
+    <string name="product_onboarding_body">"本地工具可以直接使用。需要跨设备找回账号时，再到“我的”绑定手机号或微信。主题与隐私选项都在设置中。"</string>
+    <string name="product_welcome">"欢迎使用"</string>
+    <string name="product_consent_account">"本地工具无需账号。你同意后，我们才会连接服务端，创建或恢复游客会话，处理随机安装标识、设备型号、应用版本及请求 IP。"</string>
+    <string name="product_consent_identity">"手机号、微信授权仅在你主动使用相关登录功能时处理。拒绝不会删除现有数据，你仍可使用本地功能。"</string>
+    <string name="product_consent_debug">"这是开发联调版本，完整产品政策须在正式发布前配置。"</string>
+    <string name="product_local_mode_help">"账号服务已暂停；已有账号数据仍保留在本机。"</string>
+</resources>

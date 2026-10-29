@@ -24,8 +24,8 @@ internal class AccountUiState {
 
 @Composable internal fun rememberAccountUiState(account: AccountView): AccountUiState {
     val state = rememberSaveable(account.origin, account.userId, saver = listSaver(
-        save = { listOf(it.phoneForm, it.deletePhoneForm) },
-        restore = { AccountUiState().apply { phoneForm = it[0]; deletePhoneForm = it[1] } }
+        save = { listOf(it.phoneForm, it.deletePhoneForm, it.editProfile) },
+        restore = { AccountUiState().apply { phoneForm = it[0]; deletePhoneForm = it[1]; editProfile = it.getOrElse(2) { false } } }
     )) { AccountUiState() }
     val identity = listOf(account.origin, account.userId, account.phone, account.wechatBound, account.privateHidden).joinToString("|")
     var previousIdentity by rememberSaveable { mutableStateOf(identity) }

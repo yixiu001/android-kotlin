@@ -1,5 +1,10 @@
 package cn.yixiu.starter.ui
 
+import cn.yixiu.starter.R
+
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.platform.LocalContext
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -31,8 +36,10 @@ data class UiAction(val name: String, val value: String = "")
                               accountError: String = "",
                               activeAction: String = "",
                               phoneError: String = "",
+                              profileSave: ProfileSaveFeedback = ProfileSaveFeedback(),
                               consumeMessage: () -> Unit = {},
                               developer: @Composable () -> Unit = {}) {
+    val copy = LocalResources.current
     var tab by rememberSaveable { mutableIntStateOf(0) }
     val pageState = rememberSaveableStateHolder()
     var profilePage by rememberSaveable { mutableStateOf(ProfilePage.Overview) }
@@ -49,26 +56,24 @@ data class UiAction(val name: String, val value: String = "")
             Row(Modifier.fillMaxWidth().statusBarsPadding().heightIn(min = 64.dp).padding(horizontal = 20.dp),
                 verticalAlignment = Alignment.CenterVertically) {
                 if (profilePage != ProfilePage.Overview) {
-                    IconButton(onClick = { backToProfile() }) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "返回") }
+                    IconButton(onClick = { backToProfile() }) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, copy.getString(R.string.back)) }
                     Spacer(Modifier.width(4.dp))
                 }
-                Text(profilePage.title, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                Text(copy.getString(profilePage.title), fontSize = 24.sp, fontWeight = FontWeight.Bold)
             }
         }
     }, bottomBar = {
         if (tab == 0 || profilePage == ProfilePage.Overview) {
             NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
                 NavigationBarItem(selected = tab == 0, onClick = { tab = 0 },
-                    icon = { Icon(Icons.Outlined.Home, null) }, label = { Text("首页") })
+                    icon = { Icon(Icons.Outlined.Home, null) }, label = { Text(copy.getString(R.string.nav_home)) })
                 NavigationBarItem(selected = tab == 1, onClick = { tab = 1 },
-                    icon = { Icon(Icons.Outlined.PersonOutline, null) }, label = { Text("我的") })
+                    icon = { Icon(Icons.Outlined.PersonOutline, null) }, label = { Text(copy.getString(R.string.nav_mine)) })
             }
         }
     }) { padding ->
         key(tab, profilePage) {
-            Column(Modifier.fillMaxSize().padding(padding).imePadding().verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp).padding(top = if (tab == 0) 24.dp else 8.dp, bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp)) {
+            PageColumn(Modifier.padding(padding).imePadding()) {
                 if (tab == 0) {
                     pageState.SaveableStateProvider("home-tool") { ProductHome() }
                 } else when (profilePage) {
@@ -79,9 +84,9 @@ data class UiAction(val name: String, val value: String = "")
                     ProfilePage.Settings -> {
                         settings()
                         if (account.hasSession && !account.privateHidden) InfoCard {
-                            Text("账号信息", fontWeight = FontWeight.SemiBold)
-                            Text("重新获取当前账号的最新资料。", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
-                            OutlinedButton(onClick = { action(UiAction("me")) }, enabled = actionable) { Text(if (activeAction == "me") "正在更新…" else "更新账号信息") }
+                            Text(copy.getString(R.string.account_info), fontWeight = FontWeight.SemiBold)
+                            Text(copy.getString(R.string.account_info_help), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
+                            OutlinedButton(onClick = { action(UiAction("me")) }, enabled = actionable) { Text(if (activeAction == "me") copy.getString(R.string.updating) else copy.getString(R.string.refresh_account)) }
                         }
                         developer()
                     }
@@ -93,11 +98,11 @@ data class UiAction(val name: String, val value: String = "")
             }
         }
     }
-    AccountDialogs(account, busy, accountUi, action)
+    AccountDialogs(account, busy, accountUi, action, profileSave)
 }
 
 @Composable fun InfoCard(content: @Composable ColumnScope.() -> Unit) {
     Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(14.dp), content = content)
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp), content = content)
     }
 }

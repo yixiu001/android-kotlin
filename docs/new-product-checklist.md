@@ -91,10 +91,12 @@ debug 读取 `environments/test.properties`。release 读取 `environments/produ
 | `ui/Theme.kt` | 产品品牌色、深浅主题，兼顾文字对比度 |
 | `ui/ProductHome.kt` | 唯一业务首页接入点，正常模式与本地模式共用；替换占位工具，不提前初始化账号或微信 SDK |
 | `ui/StarterScreen.kt` | 需要调整的导航；保留账号安全及账号页内的恢复弹窗入口 |
-| `ui/StartupRouter.kt` | 启动提示和可选引导文案；本地功能由 ProductHome 统一接入 |
+| `res/values/product_strings.xml` | 产品帮助、隐私说明、引导、占位示例文案；按新产品实际行为修改 |
+| `res/values/strings.xml` | 通用按钮、表单、状态及错误提示；保留格式参数的顺序和类型 |
+| `ui/StartupRouter.kt` | 仅在改变启动/引导流程时修改；纯文案修改使用上述 XML，本地功能由 ProductHome 统一接入 |
 | `ui/LocalToolScreen.kt` | 文本计数只是示例，替换/移除为产品自己的真实工具页面 |
 | `ui/PrivacyScreen.kt` | 实际数据处理、SDK、权限和撤回说明，必须随新增 SDK/权限/业务更新 |
-| `ui/ProfileCenter.kt` | 帮助与反馈、常见问题、关于应用等产品文案；应用名和版本已经从配置读取 |
+| `ui/ProfileCenter.kt` | 仅在改变个人中心布局/页面结构时修改；帮助等文字使用 XML，应用名和版本从配置读取 |
 | `AndroidManifest.xml` | 仅在实际业务需要时增加权限、组件、深链或 provider；同步隐私披露和运行时申请，不预先申请一堆权限 |
 
 **关闭 DEMO_ENABLED 不是完成业务替换。** 新产品在 `ProductHome` 的 false 分支接入自己的真实页面，然后关闭示例并确认 RELEASE_CONTENT_READY。正常/本地模式会使用同一个入口，不再分别修改两个分支。联网业务须在用户已同意且主动使用时接入；纯本地页面不能要求账号初始化。
@@ -153,6 +155,7 @@ $env:JAVA_HOME = 'D:\android-studio\jbr'
 - [ ] 缺正式配置时校验失败；正式包没有联调重置/切环境入口，也没有示例首页和“待配置”占位。
 - [ ] 保留 `android.injected.androidTest.leaveApksInstalledAfterRun=true`。日常手机只运行已核对不碰真实存储的 StarterUiTest / FoundationUiTest；全量存储/清理测试用可丢弃数据的设备。
 - [ ] 新产品若调整首页、文案或引导开关，同步修改对应 UI 测试的预期和模拟状态；测试不能永远依赖模板页面。
+- [ ] 窄屏、横屏与系统大字体检查按钮和输入是否可达；复用 `PageColumn` 与 `AppDialog`，不要固定字号规避溢出。表单明确失败保留输入，只有确认成功才关闭，未知结果恢复原请求。
 - [ ] 日常覆盖安装用新包名对应的 `adb install -r`，不卸载、不清应用数据。登录和数据迁移另行设计，不能靠复制旧 Vault 文件完成。
 
 清单重点是把每个新产品的身份、环境、品牌、供应商和发布信息配置正确；账号基础逻辑可复用。配置细节见[构建环境与发布检查](build-environments.md)、[供应商接入](providers.md)、[个人中心](profile-center.md)。

@@ -5,6 +5,7 @@
 | [项目 README](../README.md) | 工程打开、构建、配置与发布入口 |
 | [当前状态](current-state.md) | 当前配置、配套后端、验证结果和未完成项 |
 | [构建环境与发布检查](build-environments.md) | 测试/正式配置、签名、正式内容检查与构建边界 |
+| [资料保存与适配验收](verification-2026-10-29-profile-adaptive-copy.md) | 失败草稿、恢复边界、窄屏/横屏/大字体、集中文案及保留数据安装 |
 | [交互整理验收](verification-2026-10-29-tool-ui-refinement.md) | 六项交互调整、Toast/弹窗规则、隔离回归及真机数据保留 |
 | [基础工程验收](verification-2026-10-29-toolkit-foundation.md) | 本轮启动隐私、主题设置、页面拆分与数据保留验证 |
 | [个人中心](profile-center.md) | 分组导航、账号安全入口、帮助与公开链接配置 |
