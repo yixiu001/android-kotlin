@@ -1,6 +1,8 @@
 package cn.yixiu.starter.ui.account
 
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import cn.yixiu.starter.core.AccountView
 import kotlinx.coroutines.delay
 
@@ -12,6 +14,7 @@ internal class AccountUiState {
     var editProfile by mutableStateOf(false)
     var confirmDelete by mutableStateOf(false)
     var deletePhoneForm by mutableStateOf(false)
+    var showRecovery by mutableStateOf(false)
     var now by mutableLongStateOf(System.currentTimeMillis())
 
     fun closeForms() { phoneForm = false; deletePhoneForm = false }
@@ -20,12 +23,21 @@ internal class AccountUiState {
 }
 
 @Composable internal fun rememberAccountUiState(account: AccountView): AccountUiState {
-    val state = remember { AccountUiState() }
-    LaunchedEffect(Unit) {
+    val state = rememberSaveable(account.origin, account.userId, saver = listSaver(
+        save = { listOf(it.phoneForm, it.deletePhoneForm) },
+        restore = { AccountUiState().apply { phoneForm = it[0]; deletePhoneForm = it[1] } }
+    )) { AccountUiState() }
+    val identity = listOf(account.origin, account.userId, account.phone, account.wechatBound, account.privateHidden).joinToString("|")
+    var previousIdentity by rememberSaveable { mutableStateOf(identity) }
+    LaunchedEffect(state) {
         while (true) { delay(1000); state.now = System.currentTimeMillis() }
     }
-    LaunchedEffect(account.userId, account.phone, account.wechatBound, account.privateHidden) {
-        state.closeForms(); state.editProfile = false; state.confirmDelete = false; state.confirmLogout = false
+    LaunchedEffect(identity) {
+        if (previousIdentity != identity) {
+            state.closeForms(); state.editProfile = false; state.confirmDelete = false; state.confirmLogout = false
+            state.showRecovery = false
+            previousIdentity = identity
+        }
     }
     return state
 }

@@ -1,7 +1,5 @@
 package cn.yixiu.starter.ui
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,6 +20,7 @@ import kotlinx.coroutines.withContext
     var message by remember { mutableStateOf("") }
     var clearing by remember { mutableStateOf(false) }
     var confirmClear by rememberSaveable { mutableStateOf(false) }
+    ResultToast(message) { message = "" }
     LaunchedEffect(Unit) {
         runCatching { withContext(Dispatchers.IO) { ToolCache.size(context.cacheDir) } }
             .onSuccess { cacheSize = it }.onFailure { message = "临时缓存大小暂不可用" }
@@ -40,17 +39,12 @@ import kotlinx.coroutines.withContext
         Text(cacheSize?.let { "工具临时文件：${it / 1024} KB" } ?: "正在计算…")
         Text("仅清理工具临时文件，不影响账号凭证、个人资料、主题设置和用户保存的文件。")
         OutlinedButton(enabled = !clearing && cacheSize != null, onClick = { confirmClear = true }) { Text("清理临时缓存") }
-        if (message.isNotBlank()) Text(message)
     }
     InfoCard {
         Text("支持与版本", style = MaterialTheme.typography.titleMedium)
         Text("版本 ${BuildConfig.VERSION_NAME}")
         if (BuildConfig.DEBUG) Text("测试版本 · 不用于正式发布", style = MaterialTheme.typography.bodySmall)
-        if (BuildConfig.FEEDBACK_URL.isNotBlank()) DocumentButton("意见反馈", BuildConfig.FEEDBACK_URL)
-        if (BuildConfig.SUPPORT_EMAIL.isNotBlank()) TextButton(onClick = {
-            message = runCatching { context.startActivity(Intent(Intent.ACTION_SENDTO,
-                Uri.parse("mailto:${BuildConfig.SUPPORT_EMAIL}"))) }.exceptionOrNull()?.let { "没有可用邮件应用，请联系 ${BuildConfig.SUPPORT_EMAIL}" }.orEmpty()
-        }) { Text("联系支持") }
+        SupportEntry()
         DocumentButton("查看应用市场版本", BuildConfig.APP_MARKET_URL)
         if (BuildConfig.APP_RECORD_NUMBER.isNotBlank()) Text(BuildConfig.APP_RECORD_NUMBER, style = MaterialTheme.typography.bodySmall)
     }

@@ -89,14 +89,17 @@ debug 读取 `environments/test.properties`。release 读取 `environments/produ
 | `res/drawable/ic_launcher.xml` | 产品启动图标；当前系统启动页也引用此图标。若换资源位置，同时改 Manifest 和启动主题引用 |
 | `res/values/themes.xml`、`res/values/colors.xml`、`res/values-night/colors.xml` | 系统启动页样式、浅深色背景；保留无额外开屏 Activity、无强制倒计时的轻量启动 |
 | `ui/Theme.kt` | 产品品牌色、深浅主题，兼顾文字对比度 |
-| `ui/StarterScreen.kt` | 已同意隐私后的首页业务入口及需要调整的导航；保留账号安全/恢复入口 |
-| `ui/StartupRouter.kt` | 未同意隐私时的本地功能入口、启动提示和可选引导文案；本地功能不能提前调用账号或第三方登录 |
+| `ui/ProductHome.kt` | 唯一业务首页接入点，正常模式与本地模式共用；替换占位工具，不提前初始化账号或微信 SDK |
+| `ui/StarterScreen.kt` | 需要调整的导航；保留账号安全及账号页内的恢复弹窗入口 |
+| `ui/StartupRouter.kt` | 启动提示和可选引导文案；本地功能由 ProductHome 统一接入 |
 | `ui/LocalToolScreen.kt` | 文本计数只是示例，替换/移除为产品自己的真实工具页面 |
 | `ui/PrivacyScreen.kt` | 实际数据处理、SDK、权限和撤回说明，必须随新增 SDK/权限/业务更新 |
 | `ui/ProfileCenter.kt` | 帮助与反馈、常见问题、关于应用等产品文案；应用名和版本已经从配置读取 |
 | `AndroidManifest.xml` | 仅在实际业务需要时增加权限、组件、深链或 provider；同步隐私披露和运行时申请，不预先申请一堆权限 |
 
-**关闭 DEMO_ENABLED 不是完成业务替换。** 当前 StarterScreen 和 StartupRouter 的 false 分支分别显示“首页功能尚未配置”和“当前产品尚未配置本地功能”。新产品必须把这两个分支接到自己的页面，再关闭示例并确认 RELEASE_CONTENT_READY。
+**关闭 DEMO_ENABLED 不是完成业务替换。** 新产品在 `ProductHome` 的 false 分支接入自己的真实页面，然后关闭示例并确认 RELEASE_CONTENT_READY。正常/本地模式会使用同一个入口，不再分别修改两个分支。联网业务须在用户已同意且主动使用时接入；纯本地页面不能要求账号初始化。
+
+反馈入口统一由 `SupportEntry` 提供：优先 `FEEDBACK_URL`，为空或不是有效 HTTPS 地址时使用 `SUPPORT_EMAIL`。外部应用不可用时可复制支持邮箱；正式版两项皆空不显示入口，正式发布校验仍要求支持邮箱。登录能力关闭时正式版隐藏相应按钮，debug 保留配置诊断。短结果用 Toast，确认/选择用弹窗，输入错误留在字段下，不在业务首页增加账号提示卡片。
 
 纯离线、完全不需要账号的产品仍需进一步裁剪账号入口和服务启动，当前没有一个现成的 `ACCOUNT_ENABLED` 总开关，不能只关闭短信/微信就认为账号服务被关闭。
 

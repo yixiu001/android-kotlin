@@ -10,11 +10,11 @@
 
 可选引导默认关闭，启用时允许跳过，按独立版本记录。主题支持系统/浅色/深色并持久化；普通临时缓存清理只允许 cacheDir/tool-temp，不触及凭证、偏好或用户文件。通用设置提供支持和版本链接；隐私页面说明 SDK、权限与撤回，具体产品须更新真实政策正文。
 
-StarterScreen 负责导航，ui/account 承接已有账号表单、弹窗和恢复。共享加载、空态、错误组件用于真实页面状态。LocalToolScreen 提供不联网的文本计数示例，需由新产品替换，不能把未配置页面当成业务完成。
+StarterScreen 负责导航，ui/account 承接已有账号表单、弹窗和恢复。账号恢复只在账号页弹窗处理；普通结果用消费后的 Toast，输入错误就地展示，加载失败可重试。ProductHome 统一正常/本地模式业务入口，LocalToolScreen 只是无需网络的占位工具，不扩展完整性；不能把未配置页面当成业务完成。
 
 product.properties 维护应用身份，environments/test.properties 和独立 production.properties 分开提供 API、微信、开关和公开信息。正式产物强制执行 verifyReleaseReady，检查正式环境、主体/政策、签名、示例关闭与人工业务完成声明；结构编译不意味着可以发布。未配置正式材料时明确阻止，不伪造合规信息。
 
-本轮位于尚未提交的 feature/toolkit-foundation，没有后端变更、部署或推送。实际验证见[基础工程验收](verification-2026-10-29-toolkit-foundation.md)，配置细节见[构建环境](build-environments.md)。
+基础工程已推送，证据见[基础工程验收](verification-2026-10-29-toolkit-foundation.md)。后续交互整理在 feature/tool-ui-refinement 开发完成，未改后端与测试配置；当前证据见[交互整理验收](verification-2026-10-29-tool-ui-refinement.md)，配置细节见[构建环境](build-environments.md)。
 
 ## 2026-10-27 原始设计
 

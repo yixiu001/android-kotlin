@@ -18,7 +18,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import cn.yixiu.starter.BuildConfig
 import cn.yixiu.starter.core.AccountView
 import cn.yixiu.starter.ui.account.*
 
@@ -29,22 +28,23 @@ data class UiAction(val name: String, val value: String = "")
                               action: (UiAction) -> Unit,
                               settings: @Composable () -> Unit = {},
                               privacy: @Composable () -> Unit = { ProfilePrivacy() },
+                              accountError: String = "",
+                              activeAction: String = "",
+                              phoneError: String = "",
+                              consumeMessage: () -> Unit = {},
                               developer: @Composable () -> Unit = {}) {
     var tab by rememberSaveable { mutableIntStateOf(0) }
     val pageState = rememberSaveableStateHolder()
     var profilePage by rememberSaveable { mutableStateOf(ProfilePage.Overview) }
     val accountUi = rememberAccountUiState(account)
     val actionable = accountUi.isActionable(account, busy)
-    val snackbar = remember { SnackbarHostState() }
-    LaunchedEffect(message) {
-        if (message.isNotBlank() && message != "已连接") snackbar.showSnackbar(message)
-    }
+    ResultToast(message, consumeMessage)
     fun backToProfile() {
         profilePage = ProfilePage.Overview
         accountUi.closeForms()
     }
     BackHandler(enabled = tab == 1 && profilePage != ProfilePage.Overview) { backToProfile() }
-    Scaffold(snackbarHost = { SnackbarHost(snackbar) }, topBar = {
+    Scaffold(topBar = {
         if (tab == 1) Surface(color = MaterialTheme.colorScheme.surface) {
             Row(Modifier.fillMaxWidth().statusBarsPadding().heightIn(min = 64.dp).padding(horizontal = 20.dp),
                 verticalAlignment = Alignment.CenterVertically) {
@@ -69,10 +69,8 @@ data class UiAction(val name: String, val value: String = "")
             Column(Modifier.fillMaxSize().padding(padding).imePadding().verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp).padding(top = if (tab == 0) 24.dp else 8.dp, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                AccountStatus(account, busy, message, accountUi, action)
                 if (tab == 0) {
-                    if (BuildConfig.DEMO_ENABLED) pageState.SaveableStateProvider("home-tool") { LocalToolScreen() }
-                    else EmptyState("首页功能尚未配置", "请先接入产品的本地工具功能，再发布正式版本。")
+                    pageState.SaveableStateProvider("home-tool") { ProductHome() }
                 } else when (profilePage) {
                     ProfilePage.Overview -> ProfileOverview(account, actionable, { profilePage = it }, { accountUi.editProfile = true })
                     ProfilePage.Help -> ProfileHelp()
@@ -83,11 +81,14 @@ data class UiAction(val name: String, val value: String = "")
                         if (account.hasSession && !account.privateHidden) InfoCard {
                             Text("账号信息", fontWeight = FontWeight.SemiBold)
                             Text("重新获取当前账号的最新资料。", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
-                            OutlinedButton(onClick = { action(UiAction("me")) }, enabled = actionable) { Text("更新账号信息") }
+                            OutlinedButton(onClick = { action(UiAction("me")) }, enabled = actionable) { Text(if (activeAction == "me") "正在更新…" else "更新账号信息") }
                         }
                         developer()
                     }
-                    ProfilePage.Account -> AccountPage(account, actionable, accountUi, action)
+                    ProfilePage.Account -> {
+                        AccountStatus(account, busy, accountError, accountUi, action)
+                        AccountPage(account, actionable, accountUi, action, activeAction, phoneError = phoneError)
+                    }
                 }
             }
         }

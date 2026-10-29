@@ -18,10 +18,13 @@ class StarterViewModel(application: Application) : AndroidViewModel(application)
     val engine = result.getOrNull()
     val account = engine?.state ?: MutableStateFlow(AccountView(BuildConfig.API_BASE_URL, privateHidden = true))
     val busy = MutableStateFlow(false)
-    val message = MutableStateFlow(if (engine == null) "本地账号数据无法读取。请保留应用数据，检查设备密钥或产品接口配置。" else "")
+    val activeAction = MutableStateFlow("")
+    val message = MutableStateFlow("")
+    val accountError = MutableStateFlow(if (engine == null) "本地账号数据暂时无法读取，请保留应用数据并联系支持。" else "")
+    val phoneError = MutableStateFlow("")
     val logs = app.api.logs
     init {
-        if (engine != null) run("已连接") { engine.start() }
+        if (engine != null) run("", "start", quiet = true) { engine.start() }
         viewModelScope.launch { app.notice.collect { if (it.isNotEmpty()) { message.value = it; app.notice.value = "" } } }
     }
     fun launchTestTool(block: suspend CoroutineScope.() -> Unit): Job {
@@ -31,12 +34,14 @@ class StarterViewModel(application: Application) : AndroidViewModel(application)
     fun dispatch(action: UiAction) {
         if (!app.preferences.hasConsent()) return
         val engine = engine ?: return
+        if (busy.value) return
+        activeAction.value = action.name
         when (action.name) {
             "start" -> run("已连接") { engine.start() }
             "me" -> run("账号信息已更新") { engine.me() }
-            "refresh" -> run("会话已安全更新") { engine.refresh() }
-            "recover" -> run("原请求已恢复") { engine.recover() }
-            "abandonChallenge" -> run("已放弃上次挑战结果；请等待冷却结束后重新获取验证码或微信授权。") { engine.abandonChallenge() }
+            "refresh" -> run("登录状态已更新") { engine.refresh() }
+            "recover" -> run("上次操作已确认") { engine.recover() }
+            "abandonChallenge" -> run("已放弃上次验证，请在倒计时结束后重试") { engine.abandonChallenge() }
             "logout" -> run("已退出，正在使用新游客账号") { engine.logout() }
             "profile" -> run("资料已更新") {
                 val input = com.google.gson.JsonParser.parseString(action.value).asJsonObject
@@ -51,7 +56,7 @@ class StarterViewModel(application: Application) : AndroidViewModel(application)
                 val deleted = engine.submitPhone(action.value.trim()); engine.me()
                 app.notice.value = if (deleted) "账号已注销，当前为新游客；原手机号和微信 30 天内不能注册或绑定。" else "身份验证成功"
             }
-            "skipWechatProfile" -> run("已跳过微信资料，登录保持有效") { engine.skipWechatProfile() }
+            "skipWechatProfile" -> run("已跳过，登录成功") { engine.skipWechatProfile() }
             "confirmWechatProfile" -> run("微信资料已更新") {
                 val input = com.google.gson.JsonParser.parseString(action.value).asJsonObject
                 engine.confirmWechatProfile(input["use_nickname"].asBoolean, input["use_avatar"].asBoolean)
@@ -72,24 +77,33 @@ class StarterViewModel(application: Application) : AndroidViewModel(application)
             "restartInvalid" -> run("已建立新游客账号，可重新验证身份") { engine.restartInvalidSession() }
         }
     }
-    private fun run(success: String, block: suspend () -> Unit) {
+    fun consumeMessage(value: String) { if (message.value == value) message.value = "" }
+
+    private fun run(success: String, operation: String = activeAction.value, quiet: Boolean = false, block: suspend () -> Unit) {
         if (busy.value || !app.preferences.hasConsent()) return
-        busy.value = true; message.value = ""
+        busy.value = true; activeAction.value = operation; message.value = ""; accountError.value = ""; phoneError.value = ""
         viewModelScope.launch {
             try { block(); message.value = success }
             catch (cancelled: CancellationException) { throw cancelled }
-            catch (error: Exception) { message.value = friendlyError(error) }
-            finally { busy.value = false }
+            catch (error: Exception) {
+                val detail = friendlyError(error)
+                // 后台连接失败只留在账号页，不能打扰本地工具；用户操作结果则提示一次。
+                if (operation in setOf("start", "me", "recover")) accountError.value = detail
+                if (operation == "phone" && error is ApiFailure && error.reply.code == "VERIFICATION_INVALID")
+                    phoneError.value = "验证码无效或已过期，请重新输入或获取"
+                else if (!quiet) message.value = detail
+            }
+            finally { busy.value = false; activeAction.value = "" }
         }
     }
 }
 
 fun friendlyError(error: Exception): String = when (error) {
-    is PendingOperation -> "上次操作尚未确认，请点击“恢复原请求”，不要重复提交。"
+    is PendingOperation -> "上次操作尚未确认，请到账号与安全继续处理"
     is ApiFailure -> when (error.reply.code) {
-        "AUTH_CONFIGURATION_ERROR" -> "服务端尚未开通此登录方式，请完成供应商配置后再试。"
-        "AUTH_PROVIDER_UNAVAILABLE" -> "验证服务暂不可用，发送结果可能未确认，请先恢复原请求。"
-        "AUTH_STORAGE_UNAVAILABLE" -> "账号服务暂不可用，已保留恢复材料。"
+        "AUTH_CONFIGURATION_ERROR" -> "此登录方式暂不可用，请稍后重试或联系支持"
+        "AUTH_PROVIDER_UNAVAILABLE" -> "验证结果暂未确认，请到账号与安全继续处理"
+        "AUTH_STORAGE_UNAVAILABLE" -> "账号服务暂不可用，请稍后重试"
         "RATE_LIMITED" -> "请求过于频繁，请在 " + error.reply.retryAfter.coerceAtLeast(1) + " 秒后重试。"
         "IDENTITY_ALREADY_BOUND" -> "此手机号或微信已绑定其他正式账号，无法合并。"
         "IDENTITY_TYPE_ALREADY_BOUND" -> "当前账号已绑定另一手机号或微信，暂不支持换绑。"
@@ -103,12 +117,12 @@ fun friendlyError(error: Exception): String = when (error) {
         "WECHAT_PROFILE_CHANGED" -> "资料已在其他操作中改变，本次微信资料选择已结束。请更新账号信息查看。"
         "VERIFICATION_INVALID" -> "验证码或授权无效、过期，请检查或重新获取。"
         "ACCOUNT_DISABLED" -> "账号已被停用，请联系管理员。"
-        "SESSION_INVALID", "REFRESH_TOKEN_INVALID" -> "会话已失效，请确认后重新开始并验证原有身份。"
+        "SESSION_INVALID", "REFRESH_TOKEN_INVALID" -> "登录已失效，请到账号与安全重新登录"
         "AUTH_RESULT_EXPIRED", "SOURCE_ACCOUNT_CHANGED" -> "原操作结果已无法恢复，请确认账号状态后重新验证身份。"
-        "AUTH_OPERATION_IN_PROGRESS", "VERIFICATION_IN_PROGRESS", "MERGE_RETRYABLE" -> "服务器仍在处理原操作，请稍后恢复原请求。"
-        else -> "请求未完成：" + error.reply.code
+        "AUTH_OPERATION_IN_PROGRESS", "VERIFICATION_IN_PROGRESS", "MERGE_RETRYABLE" -> "上次操作仍在处理，请稍后到账号与安全继续确认"
+        else -> "操作暂未完成，请稍后重试或联系支持"
     }
-    is java.io.IOException -> "网络或存储操作未完成。若有待确认操作，请恢复原请求；不要重复获取验证码。"
+    is java.io.IOException -> "连接未完成，请稍后重试；结果待确认时请到账号与安全处理"
     is IllegalArgumentException, is IllegalStateException -> error.message ?: "当前操作不可用"
     else -> "操作未完成，请稍后重试。"
 }

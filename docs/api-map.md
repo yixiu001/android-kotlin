@@ -1,6 +1,8 @@
 联调工具使用独立 HTTPS POST `/test-tools/v1/account-reset/prepare`（普通 access Bearer，JSON `{}`，顶层预览+grant）、`/execute`（返回的 15 分钟 grant，原 user_id/confirmation）。均经 AccountEngine 调试桥接串行化并校验原账号/origin/generation；不进入普通 API 日志。正常 token 不能执行重置，客户端不接受指定任意目标。成功自动调用 Android 本地完整清理。见[联调工具](test-tools.md)。
 
-前缀 /api/v1，健康检查为根 /。权威协议是[后端账号 API](https://github.com/yixiu001/hyperf-swow/blob/main/docs/api/android-account.md)。`product.properties` 的 `API_BASE_URL` 只填 HTTPS origin（如 `https://hyperf.tongyiwl.bond`），前缀由 `ApiClient` 添加；配置里带 `/api/v1` 会被 `Protocol.origin` 拒绝。当前验收边界见[当前状态](current-state.md)。
+前缀 /api/v1，健康检查为根 /。权威协议是[后端账号 API](https://github.com/yixiu001/hyperf-swow/blob/main/docs/api/android-account.md)。构建对应的 `environments/test.properties` 或 `environments/production.properties` 中 `API_BASE_URL` 只填 HTTPS origin（如 `https://hyperf.tongyiwl.bond`），前缀由 `ApiClient` 添加；配置里带 `/api/v1` 会被 `Protocol.origin` 拒绝。当前验收边界见[当前状态](current-state.md)。
+
+账号协议不变。未知操作通过“我的 → 账号与安全 → 处理账号状态”弹窗继续原请求；普通结果使用一次性 Toast，不展示在工具首页。验证码无效在短信表单下方提示。微信候选只在没有待确认操作时显示，需先完成恢复，避免弹窗互相阻挡；候选持久化和过期规则不变。
 
 | 方法和路径 | AccountEngine | 用户入口 |
 | --- | --- | --- |

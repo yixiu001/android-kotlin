@@ -14,7 +14,10 @@ import cn.yixiu.starter.core.AccountView
 import cn.yixiu.starter.ui.*
 
 @Composable internal fun AccountPage(account: AccountView, actionable: Boolean,
-                     state: AccountUiState, action: (UiAction) -> Unit) {
+                     state: AccountUiState, action: (UiAction) -> Unit, activeAction: String = "",
+                     smsEnabled: Boolean = BuildConfig.SMS_ENABLED,
+                     wechatEnabled: Boolean = BuildConfig.WECHAT_ENABLED && BuildConfig.WECHAT_APP_ID.isNotBlank(),
+                     debug: Boolean = BuildConfig.DEBUG, phoneError: String = "") {
     val now = state.now
     if (!account.privateHidden) {
         InfoCard {
@@ -36,22 +39,22 @@ import cn.yixiu.starter.ui.*
                     Text("微信       " + if (account.wechatBound) "已绑定" else "未绑定")
                     Text("身份绑定后不可更换或解绑。", style = MaterialTheme.typography.bodySmall)
                 }
-                if (account.phone.isBlank()) Button(onClick = { state.phoneForm = true }, modifier = Modifier.fillMaxWidth(),
-                    enabled = actionable && BuildConfig.SMS_ENABLED) {
-                    Text(if (account.accountType == "member") "绑定手机号" else "手机号登录")
+                if (account.phone.isBlank() && showLoginEntry(smsEnabled, debug)) Button(onClick = { state.phoneForm = true }, modifier = Modifier.fillMaxWidth(),
+                    enabled = actionable && smsEnabled) {
+                    Text(if (!smsEnabled) "短信登录（待配置）" else if (account.accountType == "member") "绑定手机号" else "手机号登录")
                 }
-                if (!account.wechatBound) OutlinedButton(onClick = { action(UiAction("wechat")) },
+                if (!account.wechatBound && showLoginEntry(wechatEnabled, debug)) OutlinedButton(onClick = { action(UiAction("wechat")) },
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = actionable && BuildConfig.WECHAT_ENABLED && BuildConfig.WECHAT_APP_ID.isNotBlank()) {
-                    Text(if (!BuildConfig.WECHAT_ENABLED || BuildConfig.WECHAT_APP_ID.isBlank()) "微信登录（待配置）"
+                    enabled = actionable && wechatEnabled) {
+                    Text(if (activeAction == "wechat") "正在打开微信…" else if (!wechatEnabled) "微信登录（待配置）"
                         else if (account.accountType == "member") "绑定微信" else "微信登录")
                 }
-            } else Button(onClick = { action(UiAction("start")) }, enabled = actionable) { Text("重新连接") }
+            } else Button(onClick = { action(UiAction("start")) }, enabled = actionable) { Text(if (activeAction == "start") "正在连接…" else "重新连接") }
         }
-        if (state.phoneForm && account.hasSession) PhoneForm(account, actionable, now, action) { state.phoneForm = false }
-        if (state.deletePhoneForm && account.hasSession) PhoneForm(account, actionable, now, action, deletion = true) { state.deletePhoneForm = false }
+        if (state.phoneForm && account.hasSession && smsEnabled) PhoneForm(account, actionable, now, action, activeAction = activeAction, codeError = phoneError) { state.phoneForm = false }
+        if (state.deletePhoneForm && account.hasSession && smsEnabled) PhoneForm(account, actionable, now, action, deletion = true, activeAction = activeAction, codeError = phoneError) { state.deletePhoneForm = false }
         if (account.hasSession) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            TextButton(onClick = { action(UiAction("me")) }, enabled = actionable) { Text("更新账号信息") }
+            TextButton(onClick = { action(UiAction("me")) }, enabled = actionable) { Text(if (activeAction == "me") "正在更新…" else "更新账号信息") }
             TextButton(onClick = { state.confirmLogout = true }, enabled = actionable) { Text("退出当前账号") }
         }
         if (account.accountType == "member" && account.hasSession)

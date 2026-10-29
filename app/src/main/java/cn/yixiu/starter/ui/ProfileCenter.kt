@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -106,7 +107,7 @@ private val Accent: Color @Composable get() = MaterialTheme.colorScheme.primary
         HelpItem("如何修改头像和昵称？", "点击个人中心顶部资料区。昵称可以修改，头像可从内置项选择；微信资料只在微信登录或绑定成功后提供一次可跳过的选择。")
         HelpItem("退出和注销有什么区别？", "退出只影响当前设备；注销需要验证已绑定身份，立即生效，原手机号和微信 30 天内不能再次注册或绑定。")
     }
-    PublicLink("意见反馈", BuildConfig.FEEDBACK_URL, "暂未开放在线反馈。")
+    SupportEntry()
 }
 
 @Composable private fun HelpItem(title: String, body: String) {
@@ -121,13 +122,14 @@ private val Accent: Color @Composable get() = MaterialTheme.colorScheme.primary
 
 @Composable private fun PublicLink(title: String, url: String, unavailable: String) {
     val handler = LocalUriHandler.current
-    var failed by remember { mutableStateOf(false) }
+    val context = LocalContext.current
     InfoCard {
         Text(title, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
         if (url.isBlank()) Text(unavailable, color = Muted, fontSize = 14.sp)
         else {
-            OutlinedButton(onClick = { failed = runCatching { handler.openUri(url) }.isFailure }) { Text("查看$title") }
-            if (failed) Text("暂时无法打开，请检查是否已安装浏览器。", color = MaterialTheme.colorScheme.error)
+            OutlinedButton(onClick = {
+                if (runCatching { handler.openUri(url) }.isFailure) showToast(context, "暂时无法打开，请检查浏览器后重试")
+            }) { Text("查看$title") }
         }
     }
 }

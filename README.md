@@ -12,6 +12,8 @@
 
 个人中心采用资料头部与分组列表；登录/绑定、退出、注销位于“我的 → 账号与安全”，开发工具位于“我的 → 通用设置”。完整页面与公开链接配置见[个人中心说明](docs/profile-center.md)。
 
+普通操作结果使用一次性 Toast，确认/选择使用弹窗，输入错误就地提示。账号恢复集中在账号页，不打扰工具首页；正式版隐藏未开放登录方式。反馈入口统一使用网页优先、邮箱兜底。复制新产品只需在 `ui/ProductHome.kt` 接入业务首页，正常模式和本地模式共用；文本工具仅为占位。本轮证据见[交互整理验收](docs/verification-2026-10-29-tool-ui-refinement.md)。
+
 1. Android Studio 打开本目录并 Gradle Sync。
 2. SDK Manager 安装 Android API 37（本机为 37.0）和 Build Tools 36.0.0。Gradle JDK 使用 Android Studio 自带 JBR，本机 Java 25 已验证构建。
 3. 检查 [product.properties](product.properties) 的应用身份和 [environments/test.properties](environments/test.properties) 的 debug 配置；测试 API 保持 https://hyperf.tongyiwl.bond。release 使用独立正式配置，见[构建环境](docs/build-environments.md)。
@@ -48,7 +50,7 @@ Windows 构建命令（按本机实际路径设置 JAVA_HOME）：
 | OPERATOR_NAME / SUPPORT_EMAIL / APP_RECORD_NUMBER | 产品运营主体、支持邮箱及适用时的备案号 |
 | APP_MARKET_URL | 可选应用市场 HTTPS 链接；不内置下载或自动安装 |
 
-第一次复制请完成 [新产品配置清单](docs/new-product-checklist.md)。当前 debug 保留 cn.fuyaoshouhu.app、测试后端及公开微信 AppID；复制新产品必须配置自己的身份与环境。本次提交包含六项基础工程及相关文档更新，不涉及后端修改或部署。配套测试后端继续沿用 `f105663` / Jenkins #22 / SQL004；当前检查与安装结果见[本轮基础工程验收](docs/verification-2026-10-29-toolkit-foundation.md)，供应商说明见[供应商接入](docs/providers.md)。
+第一次复制请完成 [新产品配置清单](docs/new-product-checklist.md)。当前 debug 保留 cn.fuyaoshouhu.app、测试后端及公开微信 AppID；复制新产品必须配置自己的身份与环境。本次提交包含六项交互整理及文档更新，不涉及后端修改或部署。配套测试后端继续沿用 `f105663` / Jenkins #22 / SQL004；当前检查与安装结果见[交互整理验收](docs/verification-2026-10-29-tool-ui-refinement.md)，供应商说明见[供应商接入](docs/providers.md)。
 
 ## 账号行为
 

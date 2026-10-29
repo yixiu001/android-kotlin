@@ -39,8 +39,10 @@ class StarterUiTest {
     @Test fun pendingLogoutNeverShowsPrivateIdentity() {
         compose.setContent { StarterTheme { StarterScreen(AccountView("https://example.com", privateHidden = true, pendingPath = "/auth/logout"), false, "", {}) } }
         compose.onNodeWithText("我的").performClick()
+        compose.onNodeWithText("账号与安全").performClick()
+        compose.onNodeWithText("处理账号状态").performClick()
         compose.onNodeWithText("退出待确认").assertIsDisplayed()
-        compose.onNodeWithText("恢复原请求").assertIsDisplayed()
+        compose.onNodeWithText("继续确认退出").assertIsDisplayed()
         compose.onNodeWithText("手机号登录").assertDoesNotExist()
     }
 

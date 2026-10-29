@@ -57,8 +57,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
                 else -> {
                     Text("本地模式", style = MaterialTheme.typography.headlineMedium)
                     Text("账号服务已暂停；已有账号数据仍保留在本机。")
-                    if (BuildConfig.DEMO_ENABLED) localState.SaveableStateProvider("local-tool") { LocalToolScreen() }
-                    else Text("当前产品尚未配置本地功能。")
+                    localState.SaveableStateProvider("local-tool") { ProductHome() }
                     OutlinedButton(onClick = {
                         focus.clearFocus(); keyboard?.hide(); reviewConsent = true
                     }) { Text("查看隐私说明并启用账号") }

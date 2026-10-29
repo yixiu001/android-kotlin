@@ -13,7 +13,7 @@ import cn.yixiu.starter.ui.*
                                         state: AccountUiState, action: (UiAction) -> Unit) {
     val now = state.now
     if (state.editProfile && !account.privateHidden) ProfileEditor(account, busy, action) { state.editProfile = false }
-    account.wechatProfile?.let { preview ->
+    account.wechatProfile?.takeIf { account.pendingPath == null && !account.privateHidden }?.let { preview ->
         WechatProfileDialog(preview, busy || account.pendingPath != null, now, action)
     }
     if (state.confirmDelete) AlertDialog(onDismissRequest = { state.confirmDelete = false },
@@ -36,12 +36,12 @@ import cn.yixiu.starter.ui.*
         confirmButton = { TextButton(onClick = { state.confirmLogout = false; action(UiAction("logout")) }) { Text("确认退出") } },
         dismissButton = { TextButton(onClick = { state.confirmLogout = false }) { Text("取消") } })
     if (state.confirmReset) AlertDialog(onDismissRequest = { state.confirmReset = false },
-        title = { Text("放弃本地失效会话？") },
+        title = { Text("重新登录？") },
         text = { Text("原凭证和恢复材料将被清除。未绑定游客可能无法找回，正式账号可以重新验证手机号或微信登录。") },
         confirmButton = { TextButton(onClick = { state.confirmReset = false; action(UiAction("restartInvalid")) }) { Text("确认重新开始") } },
         dismissButton = { TextButton(onClick = { state.confirmReset = false }) { Text("取消") } })
     if (state.confirmChallenge) AlertDialog(onDismissRequest = { state.confirmChallenge = false },
-        title = { Text("放弃此次挑战结果？") },
+        title = { Text("放弃上次验证？") },
         text = { Text("上次短信可能已经发送。放弃后需等待冷却结束，再手动获取新的验证码或微信授权；旧验证码不再用于本次登录。") },
         confirmButton = { TextButton(onClick = { state.confirmChallenge = false; action(UiAction("abandonChallenge")) }) { Text("确认放弃") } },
         dismissButton = { TextButton(onClick = { state.confirmChallenge = false }) { Text("取消") } })

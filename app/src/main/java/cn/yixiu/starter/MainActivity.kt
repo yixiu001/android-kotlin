@@ -10,9 +10,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cn.yixiu.starter.ui.*
 import cn.yixiu.starter.debug.DeveloperPanel
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -56,7 +53,13 @@ class MainActivity : ComponentActivity() {
                     val busy by vm.busy.collectAsStateWithLifecycle()
                     val callbackBusy by app.callbackBusy.collectAsStateWithLifecycle()
                     val message by vm.message.collectAsStateWithLifecycle()
+                    val accountError by vm.accountError.collectAsStateWithLifecycle()
+                    val activeAction by vm.activeAction.collectAsStateWithLifecycle()
+                    val phoneError by vm.phoneError.collectAsStateWithLifecycle()
                     StarterScreen(account, busy || callbackBusy, message, vm::dispatch, settings = general,
+                        accountError = accountError, activeAction = activeAction,
+                        phoneError = phoneError,
+                        consumeMessage = { vm.consumeMessage(message) },
                         privacy = { PrivacyContent(true,
                             StartupPolicy.canWithdraw(busy, account.pendingPath, callbackBusy)) {
                             save {
@@ -68,9 +71,7 @@ class MainActivity : ComponentActivity() {
                             }
                         } }) { DeveloperPanel(vm) }
                 }
-                if (error.isNotBlank()) AlertDialog(onDismissRequest = { error = "" },
-                    title = { Text("操作未完成") }, text = { Text(error) },
-                    confirmButton = { TextButton(onClick = { error = "" }) { Text("知道了") } })
+                ResultToast(error) { error = "" }
             }
         }
     }

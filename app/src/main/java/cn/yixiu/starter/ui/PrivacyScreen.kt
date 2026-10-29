@@ -60,6 +60,7 @@ import cn.yixiu.starter.BuildConfig
 @Composable fun DocumentButton(label: String, url: String) {
     val context = LocalContext.current
     var error by remember { mutableStateOf("") }
+    ResultToast(error) { error = "" }
     if (url.isNotBlank()) TextButton(onClick = {
         error = runCatching {
             val uri = Uri.parse(url)
@@ -68,5 +69,4 @@ import cn.yixiu.starter.BuildConfig
         }.exceptionOrNull()?.let { "暂时无法打开，请稍后重试或联系支持" }.orEmpty()
     }) { Text(label) }
     else if (BuildConfig.DEBUG) Text("$label：正式地址待产品配置", style = MaterialTheme.typography.bodySmall)
-    if (error.isNotBlank()) Text(error, color = MaterialTheme.colorScheme.error)
 }
