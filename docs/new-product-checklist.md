@@ -12,6 +12,57 @@
 - [ ] Android Studio 打开新目录，由本机生成 `local.properties`；SDK 路径和 JDK 使用本机实际值。当前工程 compile/target SDK 37、min SDK 26；不要因复制项目顺带降级或随意改整套构建版本。
 - [ ] 仓库中的构建、配置、验收文档替换为新产品实际状态；旧产品的 Jenkins 构建号、测试结果和截图不能作为新产品验收证据。
 
+### 1.1 可以清理的本地产物
+
+**以下清理仅针对新产品副本，不要求删除当前基础工程的任何文件。** 优先下载 GitHub 源码 ZIP，通常不会带入已忽略的缓存、日志、APK 和签名文件；直接复制本机目录时，再逐项检查。
+
+| 文件或目录 | 新产品副本中的处理方式 |
+| --- | --- |
+| `.gradle/`、`.kotlin/`、`.idea/` | 可删除，由构建工具和 IDE 重新生成 |
+| 根目录 `build/`、`app/build/` 等构建输出 | 可删除，不复用旧产品的产物 |
+| `.verification/`、`*.log`、旧 APK | 可删除，本机验收记录与旧安装包不是新产品交付物 |
+| `local.properties` | 可删除，在新工程中生成本机 SDK 路径 |
+| `.git/` | 仅在新副本不保留原历史时删除并重新初始化仓库；需要保留历史则保留它，只修改 origin 指向新仓库 |
+
+### 1.2 不照搬的配置与历史文档
+
+| 内容 | 新产品副本中的处理方式 |
+| --- | --- |
+| `keystore.properties`、签名私钥文件 | 不带入副本；原产品私钥及备份妥善保管，不删除原件。为新产品配置发布签名 |
+| 实际的 `environments/production.properties` | 不照搬，按 `.example` 模板重新填写新产品正式环境 |
+| `docs/verification*.md`、`docs/superpowers/plans/` | 原工程历史验收与实施记录，可从新副本删除；以后记录新产品自己的验收结果 |
+| `docs/progress.md`、`docs/implementation-plan.md`、`design-qa.md` | 旧开发记录，可删除或重写 |
+| `docs/images/` 中的旧产品截图 | 可删除或替换；同步更新使用它们的文档 |
+| `README.md`、`docs/current-state.md`、`docs/design.md` | 建议保留并改写为新产品说明，去掉旧提交、部署编号和验收状态 |
+
+删除或重命名文档后，同步更新 `docs/README.md` 和其他引用，避免留下失效链接。构建说明、接口映射、供应商接入及本清单可继续复用，具体产品值需要更新。
+
+### 1.3 替换首页后再删除示例代码
+
+文本计数是占位示例，不要求新产品保留。接入真实业务首页后再完成以下操作：
+
+- [ ] 修改 `ui/ProductHome.kt`，接入真实页面并移除对 `LocalToolScreen()` 的调用，然后删除不再使用的 `ui/LocalToolScreen.kt`。
+- [ ] 清理 `res/values/product_strings.xml` 中已无引用的文本计数文案，不删除仍供帮助、隐私和引导使用的资源。
+- [ ] 调整或删除仅验证文本计数的测试用例；混合测试文件中仍有账号、导航和公共交互验证时，不整份删除。
+- [ ] 将对应环境的 `DEMO_ENABLED` 设为 `false`，确认正常模式和本地模式都进入新首页。仅关闭开关仍会显示“尚未配置”，不等于业务替换完成。
+
+上述 `ui/` 路径相对 `app/src/main/java/cn/yixiu/starter/`，`res/` 相对 `app/src/main/`。
+
+### 1.4 应保留的基础能力与文件
+
+| 内容 | 保留原因与调整范围 |
+| --- | --- |
+| `core/`、`storage/`、`wechat/` | 复用账号状态机、会话安全存储、请求恢复和微信接入，不因复制产品重新实现 |
+| `settings/`、隐私/账号页面、公共布局与通用文案 | 保留设置、隐私流程、资料保存及适配能力，按产品修改文案和品牌 |
+| `app/src/debug/`、`app/src/release/` | 保留调试与正式隔离；不需要联调工具时设置 `TEST_TOOLS_ENABLED=false`，不用直接删除实现 |
+| `app/src/test/`、`app/src/androidTest/` | 保留协议、账号、安全和通用交互回归；替换示例后同步调整相关用例 |
+| `gradle/`、`gradlew`、`gradlew.bat`、Gradle 构建文件 | 保留可重复构建能力；注意 `gradle/` 是 Wrapper 文件，和可清理的 `.gradle/` 缓存不同 |
+| `gradle.properties`、`app/proguard-rules.pro`、`scripts/` | 保留构建、混淆和发布检查；保留测试后不自动卸载 App 的设置 |
+| `.gitignore`、`.gitattributes`、配置 `.example` 文件 | 保留忽略规则、文件规范及新环境/签名模板 |
+| `product.properties`、`environments/test.properties` | 保留文件并改写产品身份、后端域名、微信 AppID 与开关，不继续指向原产品 |
+
+代码目录名和 namespace 可以保留，独立安装身份由 `APPLICATION_ID` 决定；后端数据隔离仍须完成第 4 节，不能靠删除客户端缓存实现。
+
 ## 2. 产品身份：product.properties
 
 这些值同时用于 debug 和 release。
